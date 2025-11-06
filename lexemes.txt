@@ -1,0 +1,77 @@
+CMSC 124 Design and Implementation of Programming Languages
+LOLCODE Grammar
+First Semester AY 25-26
+Project Requirement 02
+
+Group Name: LOL2
+Section: S-2L
+Member 1: Aldrich Devilles
+Member 2: Joshua A. Carlos
+Member 3: Will Andre S. Peligro
+Member 4:
+
+LOLCODE GRAMMAR
+Use angle brackets (<,>) to denote abstractions. Type lexemes that have been defined in Project Requirement 01 using lowercase letters.
+If the lexemes have not yet been defined, add the newly defined lexemes at the last section of this document.
+
+LHS ::= RHS
+<program> ::= HAI <comment> <linebreak> <decl_block> <statements> <linebreak> KTHXBYE
+<statements> ::= <statement> <linebreak> <statements> <comment> | ε
+<statement> ::= <print> | <assignment> | <var_decl> | <input> | <if_else> | <loop> | <func_def> | <func_call> | <return>
+<decl_block> ::= WAZZUP <linebreak> <statements> <linebreak> BUHBYE | ε
+<print> ::= VISIBLE <expr>
+<literal> ::= numbr | numbar | yarn | troof
+<var_decl> ::= I HAS A varident <initvalue>
+<initvalue> ::= ITZ <expr> | ε
+<assignment> ::= varident R <expr>
+<input> ::= GIMMEH varident
+<expr> ::= <literal> | varident | <operation> | <cast> | <concatenate>
+<operation> ::= <sum> | <diff> | <produkt> | <quoshunt> | <mod> | <biggr> | <smallr> | <and> | <or> | <xor> | <not> | <compare_similar> | <compare_different>
+<sum> ::= SUM OF <expr> AN <expr>
+<diff> ::= DIFF OF <expr> AN <expr>
+<produkt> ::= PRODUKT OF <expr> AN <expr>
+<quoshunt> ::= QUOSHUNT OF <expr> AN <expr>
+<mod> ::= MOD OF <expr> AN <expr>
+
+<and> ::= BOTH OF <expr> AN <expr>
+<or> ::= EITHER OF <expr> AN <expr>
+<xor> ::= WON OF <expr> AN <expr>
+<not> ::= NOT <expr>
+<compare_similar> ::= BOTH SAEM <expr> AN <expr>
+<compare_different> ::= DIFFRINT <expr> AN <expr>
+<biggr> ::= BIGGR OF <expr> AN <expr>
+<smallr> ::= SMALLR OF <expr> AN <expr>
+<concatenate> ::= SMOOSH <expr> <more_exprs> MKAY
+<more_exprs> ::= AN <expr> <more_exprs> | ε
+<cast> ::= MAEK <expr> A type | varident IS NOW A type
+<if_else> ::= O RLY? <linebreak> YA RLY <linebreak> <statements> <mebbe_block> <nowai_block> OIC
+<mebbe_block> ::= MEBBE <expr> <linebreak> <statements> <mebbe_block> | ε
+<nowai_block> ::= NO WAI <linebreak> <statements> | ε
+<switch> ::= WTF? <linebreak> <cases> <default_case> OIC
+<cases> ::= OMG <expr> <linebreak> <statements> <cases> | ε
+<default_case> ::= OMGWTF <linebreak> <statements> | ε
+<loop> ::= IM IN YR loopident <loop_action> YR varident TIL <expr> <linebreak> <statements> <linebreak> IM OUTTA YR loopident
+<loop_action> ::= UPPIN | NERFIN
+<func_def> ::= HOW IZ I funcident <parameter> <linebreak> <statements> <linebreak> IF U SAY SO
+<func_call> ::= I IZ funcident <parameter> MKAY
+<parameter> ::= YR varident <parameter_more> | ε
+<parameter_more> ::= AN YR varident <parameter_more> | ε
+<return> ::= FOUND YR <expr>
+
+<linebreak> ::= '\n'
+<comment> ::= <single_comment> | <multiline_comment> | ε
+<single_comment> ::= BTW <text> <linebreak>
+<multiline_comment> ::= OBTW <text_block> TLDR <linebreak>
+<text> ::= textcomment | ε
+<text_block> ::= textblockcomment | ε
+
+NEWLY-ADDED LEXEMES
+Put here the definition of the lexemes that have not yet been defined in Project Requirement 01.
+
+LEXEME | Regular Expression
+varident | [a-zA-Z] [a-zA-Z0-9_]*
+funcident | [a-zA-Z] [a-zA-Z0-9_]*
+loopident | [A-Za-z0-9\n\r,.;:?"'_]*
+linebreak | (\x?\n)+
+textcomment | [^\n\r]*
+textblockcomment | [A-Za-z0-9\n\r,.;:?"'_]*
