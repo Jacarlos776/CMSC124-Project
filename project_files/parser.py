@@ -2,7 +2,7 @@
 # 
 
 class Parser:
-    def parse(self, tokens, lexemes, rows, columns):
+    def __init__(self, tokens, lexemes, rows, columns):
         self.tokens = tokens
         self.lexemes = lexemes
         self.rows = rows
