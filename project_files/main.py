@@ -30,9 +30,16 @@ try:
 
     print("\nRecognized Tokens \n", token)
     print("\nRecognized lexemes \n", lexeme)
+    
+    parser = Parser(token, lexeme, row, column)
+    if (parser.parse_program()):
+        print("Parsing successful! Program is valid.")
 
 except RuntimeError as e:
     print(f"Lexical Error: {e}")
+    sys.exit(1)
+except SyntaxError as e:
+    print(f"Parsing failed: {e}")
     sys.exit(1)
 except FileNotFoundError:
     print(f"Error: File not found at {file_path}")
