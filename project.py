@@ -58,8 +58,8 @@ class LexicalAnalyzer:
                 regex_flags = re.DOTALL
                 token_patterns.append(f'(?P<{name}>{pattern})')
             elif len(pattern) == 3 and pattern[2] == re.DOTALL:
-                 token_patterns.append(f'(?P<{name}>{pattern[0]})')
-                 regex_flags = re.DOTALL
+                token_patterns.append(f'(?P<{name}>{pattern[0]})')
+                regex_flags = re.DOTALL
             else:
                 token_patterns.append(f'(?P<{name}>{pattern})')
         
