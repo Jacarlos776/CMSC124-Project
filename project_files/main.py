@@ -31,9 +31,9 @@ try:
     print("\nRecognized Tokens \n", token)
     print("\nRecognized lexemes \n", lexeme)
     
-    parser = Parser(token, lexeme, row, column)
-    if (parser.parse_program()):
-        print("Parsing successful! Program is valid.")
+    # parser = Parser(token, lexeme, row, column)
+    # if (parser.parse_program()):
+    #     print("Parsing successful! Program is valid.")
 
 except RuntimeError as e:
     print(f"Lexical Error: {e}")

@@ -65,14 +65,15 @@ class Parser:
             #elif current_token ==
 
             # input
+
+# Personal Task 
             elif current_token == 'GIMMEH':
                 self.parse_gimmeh(self)
 
+# Personal Task
             # if/else
             elif current_token == 'O_RLY?':
                 self.parse_o_rly(self)
-                # we can add maybe block to if else parser
-                # we can also add no wai block to if else
             
             # switch
             elif current_token == 'WTF?':
@@ -91,3 +92,34 @@ class Parser:
 
         # store initial value somewhere
     
+    def parse_gimmeh(self): #User Input
+        #add type checker -- YARN
+        self.consume('GIMMEH')
+
+        
+    def parse_o_rly(self): #\
+        current_token = self.get_current_token()
+        self.consume('O_RLY')
+
+        while current_token == 'YA_RLY':
+            self.parse_ya_rly(self)
+        
+        while current_token == 'MEBBE':
+            self.parse_mebbe(self)
+
+        while current_token == 'NO_WAI':
+            self.parse_no_wai(self)
+
+        self.parse_oic('OIC')
+
+    def parse_ya_rly(self):
+        self.consume('ID')
+
+    def parse_mebbe(self):
+        self.consume('ID')
+
+    def parse_no_wai(self):
+        self.consume('ID')
+
+    def parse_oic(self):
+        self.consume('ID')
