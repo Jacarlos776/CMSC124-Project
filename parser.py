@@ -115,6 +115,4 @@ class Parser:
         if current in ['NUMBR_LIT', 'NUMBAR_LIT', 'YARN_LIT']:
             self.consume(current)
         else:
-            raise.SyntaxError('Error found.')
-
-
+            raise.SyntaxError('Syntax Error found.')

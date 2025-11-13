@@ -15,7 +15,7 @@ class LexicalAnalyzer:
             # --- LOLCODE Multi-Word Keywords (High Priority) ---
             ('BOTH_SAEM', r'\bBOTH\s+SAEM\b'),        # ==
             ('DIFFRINT',  r'\bDIFFRINT\b'),          # !=
-            ('O_RLY',     r'\bO\s+RLY\?\b'),         # if
+            ('O_RLY',     r'\bO\s+RLY\b'),         # if
             ('YA_RLY',    r'\bYA\s+RLY\b'),          # then
             ('NO_WAI',    r'\bNO\s+WAI\b'),          # else
             ('O_RLY_END', r'\bO\s+RLY\s+END\b'),     # End of conditional
