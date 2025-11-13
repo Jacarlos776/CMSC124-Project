@@ -95,11 +95,14 @@ class Parser:
     def parse_gimmeh(self): #User Input
         #add type checker -- YARN
         self.consume('GIMMEH')
+        #symbol table for input
 
         
     def parse_o_rly(self): #\
         current_token = self.get_current_token()
         self.consume('O_RLY')
+
+
 
         while current_token == 'YA_RLY':
             self.parse_ya_rly(self)
