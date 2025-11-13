@@ -82,12 +82,39 @@ class Parser:
             # error
             
             current_token = self.get_current_token()
-    
-    # Parses through Variable Declarations
-    def parse_variable(self):
-        self.consume('I_HAS_A')
 
-        # store varident somewhere?
+    # parse statement wtf
+    def parse_wtf(self):
+        if self.get_current_token() in ['WTF?', 'WTF_Q']:
+            self.consume(self.get_current_token())
 
-        # store initial value somewhere
-    
+        while self.get_current_token() == 'OMG':
+            self.consume('OMG')
+            self.parse_literal()
+            self.parse_statements()
+            if self.get_current_token() == 'GTFO':
+                self.consume('GTFO')
+
+        if self.get_current_token() == 'OMGWTF':
+            self.consume('OMGWTF')
+            self.parse_statements()
+
+        self.consume('OIC')
+
+    # parses through loop
+    def parse_loop(self):
+        self.consume('IM_IN_YR')
+        self.consume('ID')
+        self.parse_statements()
+        self.consume('IM_OUTTA_YR')
+        self.consume('ID')
+
+    # parses through literal values
+    def parse_literal(self):
+        current = self.get_current_token()
+        if current in ['NUMBR_LIT', 'NUMBAR_LIT', 'YARN_LIT']:
+            self.consume(current)
+        else:
+            raise.SyntaxError('Error found.')
+
+
