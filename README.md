@@ -11,3 +11,6 @@ Progress:
 
 Date | Task
 11-06-2025 Inital Commit
+11-06-2025 Lexical Analyzer
+11-13-2025 Parser
+
