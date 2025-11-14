@@ -6,77 +6,117 @@ class LexicalAnalyzer:
 
     def tokenize(self, code):
         rules = [
-            # --- COMMENTS (Highest Priority) ---
-            # Multi-line comment: OBTW ... TLDR
-            ('MULTI_CMT_SKIP', r'\bOBTW\b[\s\S]*?\bTLDR\b', re.DOTALL),
-            # Single-line comment: BTW ...
-            ('SINGLE_CMT_SKIP', r'\bBTW\b.*'),
-
-            # --- MULTI-WORD KEYWORDS ---
+            # =======================
+            #   COMMENTS (Highest Priority)
+            # =======================
+        
+            # Multi-line comment: OBTW ... TLDR + newline
+            ('MULTI_CMT_SKIP',  r'\bOBTW\b[\s\S]*?\bTLDR\b[ \t]*\n'),
+        
+            # Single-line comment: BTW ... (until newline)
+            ('SINGLE_CMT_SKIP', r'\bBTW\b[^\n]*\n'),
+        
+            # =======================
+            #   MULTI-WORD KEYWORDS
+            # =======================
+        
             ('I_HAS_A',        r'\bI\s+HAS\s+A\b'),
             ('SUM_OF',         r'\bSUM\s+OF\b'),
             ('DIFF_OF',        r'\bDIFF\s+OF\b'),
             ('PRODUKT_OF',     r'\bPRODUKT\s+OF\b'),
             ('QUOSHUNT_OF',    r'\bQUOSHUNT\s+OF\b'),
             ('MOD_OF',         r'\bMOD\s+OF\b'),
+        
             ('BIGGR_OF',       r'\bBIGGR\s+OF\b'),
             ('SMALLR_OF',      r'\bSMALLR\s+OF\b'),
+        
             ('BOTH_OF',        r'\bBOTH\s+OF\b'),
             ('EITHER_OF',      r'\bEITHER\s+OF\b'),
             ('WON_OF',         r'\bWON\s+OF\b'),
             ('ANY_OF',         r'\bANY\s+OF\b'),
             ('ALL_OF',         r'\bALL\s+OF\b'),
+        
             ('BOTH_SAEM',      r'\bBOTH\s+SAEM\b'),
+            ('DIFFRINT',       r'\bDIFFRINT\b'),
             ('IS_NOW_A',       r'\bIS\s+NOW\s+A\b'),
+        
             ('O_RLY',          r'\bO\s+RLY\?\b'),
             ('NO_WAI',         r'\bNO\s+WAI\b'),
             ('YA_RLY',         r'\bYA\s+RLY\b'),
+        
             ('IM_IN_YR',       r'\bIM\s+IN\s+YR\b'),
             ('IM_OUTTA_YR',    r'\bIM\s+OUTTA\s+YR\b'),
+        
             ('HOW_IZ_I',       r'\bHOW\s+IZ\s+I\b'),
             ('IF_U_SAY_SO',    r'\bIF\s+U\s+SAY\s+SO\b'),
+        
             ('FOUND_YR',       r'\bFOUND\s+YR\b'),
             ('I_IZ',           r'\bI\s+IZ\b'),
-
-            # --- SINGLE-WORD KEYWORDS ---
+        
+            # =======================
+            #   SINGLE-WORD KEYWORDS
+            # =======================
+        
             ('HAI',        r'\bHAI\b'),
             ('KTHXBYE',    r'\bKTHXBYE\b'),
             ('WAZZUP',     r'\bWAZZUP\b'),
             ('BUHBYE',     r'\bBUHBYE\b'),
+        
             ('ITZ',        r'\bITZ\b'),
             ('R',          r'\bR\b'),
             ('VISIBLE',    r'\bVISIBLE\b'),
             ('GIMMEH',     r'\bGIMMEH\b'),
-            ('DIFFRINT',   r'\bDIFFRINT\b'),
+        
             ('SMOOSH',     r'\bSMOOSH\b'),
             ('MAEK',       r'\bMAEK\b'),
+        
             ('NOT',        r'\bNOT\b'),
             ('MEBBE',      r'\bMEBBE\b'),
             ('OIC',        r'\bOIC\b'),
+        
             ('WTF',        r'\bWTF\?\b'),
             ('OMG',        r'\bOMG\b'),
             ('OMGWTF',     r'\bOMGWTF\b'),
+        
             ('UPPIN',      r'\bUPPIN\b'),
             ('NERFIN',     r'\bNERFIN\b'),
+        
             ('YR',         r'\bYR\b'),
             ('TIL',        r'\bTIL\b'),
             ('WILE',       r'\bWILE\b'),
             ('GTFO',       r'\bGTFO\b'),
             ('MKAY',       r'\bMKAY\b'),
-
-            # --- LITERALS ---
+        
+            # --- Newly added (missing) ---
+            ('AN',         r'\bAN\b'),
+            ('A',          r'\bA\b'),
+        
+            # =======================
+            #   LITERALS
+            # =======================
+        
             ('YARN_LIT',   r'"[^"]*"'),
             ('NUMBAR_LIT', r'-?\d+\.\d+'),
             ('NUMBR_LIT',  r'-?\d+'),
             ('TROOF_LIT',  r'\b(WIN|FAIL)\b'),
             ('TYPE_LIT',   r'\b(NUMBR|NUMBAR|YARN|TROOF|BUKKIT|NOOB)\b'),
-
-            # --- IDENTIFIERS, WHITESPACE, AND MISC ---
-            ('ID',         r'[a-zA-Z]\w*'),
-            ('NEWLINE',    r'\n'),
+        
+            # =======================
+            #   IDENTIFIER & WHITESPACE
+            # =======================
+        
+            # varident and funcident
+            ('ID',         r'[a-zA-Z][a-zA-Z0-9_]*'),
+        
+            # NEWLINE maps to <linebreak>
+            ('NEWLINE',    r'\n+'),
+        
             ('SKIP',       r'[ \t]+'),
+        
+            # Catch-all
             ('MISMATCH',   r'.'),
         ]
+
 
         token_patterns = []
         regex_flags = 0
