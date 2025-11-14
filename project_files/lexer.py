@@ -6,47 +6,76 @@ class LexicalAnalyzer:
 
     def tokenize(self, code):
         rules = [
-            # OBTW ... TLDR (Multi-line)
-            # The pattern is non-greedy (`.*?`) to stop at the first TLDR
-            ('MULTI_CMT_SKIP', r'\bOBTW\b.*?\bTLDR\b'), 
-            # BTW ... (Single-line)
+            # --- COMMENTS (Highest Priority) ---
+            # Multi-line comment: OBTW ... TLDR
+            ('MULTI_CMT_SKIP', r'\bOBTW\b[\s\S]*?\bTLDR\b', re.DOTALL),
+            # Single-line comment: BTW ...
             ('SINGLE_CMT_SKIP', r'\bBTW\b.*'),
-            
-            # --- LOLCODE Multi-Word Keywords (High Priority) ---
-            ('BOTH_SAEM', r'\bBOTH\s+SAEM\b'),        # ==
-            ('DIFFRINT',  r'\bDIFFRINT\b'),          # !=
-            ('O_RLY',     r'\bO\s+RLY\b'),         # if
-            ('YA_RLY',    r'\bYA\s+RLY\b'),          # then
-            ('NO_WAI',    r'\bNO\s+WAI\b'),          # else
-            ('O_RLY_END', r'\bO\s+RLY\s+END\b'),     # End of conditional
-            ('I_HAS_A',   r'\bI\s+HAS\s+A\b'),       # Variable declaration
-            ('IM_IN_YR',  r'\bIM\s+IN\s+YR\b'),      # Start of loop
-            ('IM_OUTTA_YR', r'\bIM\s+OUTTA\s+YR\b'), # End of loop
-            ('SUM_OF',    r'\bSUM\s+OF\b'),          # +
-            ('DIFF_OF',   r'\bDIFF\s+OF\b'),         # -
-            ('PRODUKT_OF', r'\bPRODUKT\s+OF\b'),     # *
-            ('QUOSHUNT_OF', r'\bQUOSHUNT\s+OF\b'),   # /
-            ('MOD_OF',    r'\bMOD\s+OF\b'),          # %
-            
-            # --- LOLCODE Single-Word Keywords ---
-            ('HAI',       r'\bHAI\b'),               # Start of program
-            ('KTHXBYE',   r'\bKTHXBYE\b'),           # End of program
-            ('VISIBLE',   r'\bVISIBLE\b'),           # Print
-            ('GIMMEH',    r'\bGIMMEH\b'),            # Read/Input
-            ('ITZ',       r'\bITZ\b'),               # Initialization
-            ('GTFO',      r'\bGTFO\b'),              # Break / Return
-            ('NOT',       r'\bNOT\b'),               # Logical NOT
-            
-            # --- Data/Literal Types ---
-            ('YARN_LIT',  r'"[^"]*"'),               # "string value"
-            ('NUMBAR_LIT', r'-?\d+\.\d+'),           # Float
-            ('NUMBR_LIT', r'-?\d+'),                 # Integer
-            
-            # --- Identifiers and Catch-All (Lowest Priority) ---
-            ('ID',        r'[a-zA-Z]\w*'),           # Variable/Function names
-            ('NEWLINE',   r'\n'),                    # NEW LINE
-            ('SKIP',      r'[ \t]+'),                # SPACE and TABS
-            ('MISMATCH',  r'.'),                     # ANOTHER CHARACTER
+
+            # --- MULTI-WORD KEYWORDS ---
+            ('I_HAS_A',        r'\bI\s+HAS\s+A\b'),
+            ('SUM_OF',         r'\bSUM\s+OF\b'),
+            ('DIFF_OF',        r'\bDIFF\s+OF\b'),
+            ('PRODUKT_OF',     r'\bPRODUKT\s+OF\b'),
+            ('QUOSHUNT_OF',    r'\bQUOSHUNT\s+OF\b'),
+            ('MOD_OF',         r'\bMOD\s+OF\b'),
+            ('BIGGR_OF',       r'\bBIGGR\s+OF\b'),
+            ('SMALLR_OF',      r'\bSMALLR\s+OF\b'),
+            ('BOTH_OF',        r'\bBOTH\s+OF\b'),
+            ('EITHER_OF',      r'\bEITHER\s+OF\b'),
+            ('WON_OF',         r'\bWON\s+OF\b'),
+            ('ANY_OF',         r'\bANY\s+OF\b'),
+            ('ALL_OF',         r'\bALL\s+OF\b'),
+            ('BOTH_SAEM',      r'\bBOTH\s+SAEM\b'),
+            ('IS_NOW_A',       r'\bIS\s+NOW\s+A\b'),
+            ('O_RLY',          r'\bO\s+RLY\?\b'),
+            ('NO_WAI',         r'\bNO\s+WAI\b'),
+            ('YA_RLY',         r'\bYA\s+RLY\b'),
+            ('IM_IN_YR',       r'\bIM\s+IN\s+YR\b'),
+            ('IM_OUTTA_YR',    r'\bIM\s+OUTTA\s+YR\b'),
+            ('HOW_IZ_I',       r'\bHOW\s+IZ\s+I\b'),
+            ('IF_U_SAY_SO',    r'\bIF\s+U\s+SAY\s+SO\b'),
+            ('FOUND_YR',       r'\bFOUND\s+YR\b'),
+            ('I_IZ',           r'\bI\s+IZ\b'),
+
+            # --- SINGLE-WORD KEYWORDS ---
+            ('HAI',        r'\bHAI\b'),
+            ('KTHXBYE',    r'\bKTHXBYE\b'),
+            ('WAZZUP',     r'\bWAZZUP\b'),
+            ('BUHBYE',     r'\bBUHBYE\b'),
+            ('ITZ',        r'\bITZ\b'),
+            ('R',          r'\bR\b'),
+            ('VISIBLE',    r'\bVISIBLE\b'),
+            ('GIMMEH',     r'\bGIMMEH\b'),
+            ('DIFFRINT',   r'\bDIFFRINT\b'),
+            ('SMOOSH',     r'\bSMOOSH\b'),
+            ('MAEK',       r'\bMAEK\b'),
+            ('NOT',        r'\bNOT\b'),
+            ('MEBBE',      r'\bMEBBE\b'),
+            ('OIC',        r'\bOIC\b'),
+            ('WTF',        r'\bWTF\?\b'),
+            ('OMG',        r'\bOMG\b'),
+            ('OMGWTF',     r'\bOMGWTF\b'),
+            ('UPPIN',      r'\bUPPIN\b'),
+            ('NERFIN',     r'\bNERFIN\b'),
+            ('YR',         r'\bYR\b'),
+            ('TIL',        r'\bTIL\b'),
+            ('WILE',       r'\bWILE\b'),
+            ('GTFO',       r'\bGTFO\b'),
+            ('MKAY',       r'\bMKAY\b'),
+
+            # --- LITERALS ---
+            ('YARN_LIT',   r'"[^"]*"'),
+            ('NUMBAR_LIT', r'-?\d+\.\d+'),
+            ('NUMBR_LIT',  r'-?\d+'),
+            ('TROOF_LIT',  r'\b(WIN|FAIL)\b'),
+            ('TYPE_LIT',   r'\b(NUMBR|NUMBAR|YARN|TROOF|BUKKIT|NOOB)\b'),
+
+            # --- IDENTIFIERS, WHITESPACE, AND MISC ---
+            ('ID',         r'[a-zA-Z]\w*'),
+            ('NEWLINE',    r'\n'),
+            ('SKIP',       r'[ \t]+'),
+            ('MISMATCH',   r'.'),
         ]
 
         token_patterns = []
