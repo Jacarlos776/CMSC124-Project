@@ -7,11 +7,11 @@ HAI
     BUHBYE
     
     HOW IZ I addNum YR x AN YR y
-        FOUND YR SUM OF x an y
+        FOUND YR SUM OF x AN y
     IF U SAY SO
 
     HOW IZ I printName YR person
-        VISIBLE "Hello, " + person
+        VISIBLE "Hello, " person
         GTFO
     IF U SAY SO
 
