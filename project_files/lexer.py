@@ -25,7 +25,7 @@ class LexicalAnalyzer:
             ('DIFF_OF',        r'\bDIFF\s+OF\b'),
             ('PRODUKT_OF',     r'\bPRODUKT\s+OF\b'),
             ('QUOSHUNT_OF',    r'\bQUOSHUNT\s+OF\b'),
-            ('MOD_OF',         r'\bMOD\s+OF\b'), # removed ITS from ITS MOD OF, moved it down to single word keywords
+            ('MOD_OF',         r'\bMOD\s+OF\b'), # removed ITS from ITS MOD OF, moved it down to single word keywords UPDATE: ITS is probably a type of ITZ, removed for now. 
         
             ('BIGGR_OF',       r'\bBIGGR\s+OF\b'),
             ('SMALLR_OF',      r'\bSMALLR\s+OF\b'),
@@ -63,7 +63,7 @@ class LexicalAnalyzer:
             ('BUHBYE',     r'\bBUHBYE\b'),
         
             ('ITZ',        r'\bITZ\b'),
-            ('ITS',        r'\bITS\b'), # removed ITS from ITS MOD OF regex then placed it here
+            #UPDATE: ITS is probably a typo of ITZ, removed for now: ('ITS',        r'\bITS\b'), # removed ITS from ITS MOD OF regex then placed it here
             ('R',          r'\bR\b'),
             ('VISIBLE',    r'\bVISIBLE\b'),
             ('GIMMEH',     r'\bGIMMEH\b'),
