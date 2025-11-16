@@ -40,12 +40,13 @@ class Parser:
     
     # Helper function for parsing values and expressions
     def parse_value_or_expression(self):
+        print(self.lexemes[self.current_token_index])
         tok = self.get_current_token()
         if tok in ['NUMBR_LIT', 'NUMBAR_LIT', 'YARN_LIT', 'TROOF_LIT']:
             return {'type': 'literal', 'value': self.consume(tok)}
         elif tok == 'ID':
             return {'type': 'var', 'name': self.consume('ID')}
-        elif tok in ['SUM_OF', 'DIFF_OF', 'PRODUKT_OF', 'QUOSHUNT_OF', 'MOD_OF', 'BIGGR_OF', 'SMALLR_OF']:
+        elif tok in ['SUM_OF', 'DIFF_OF', 'PRODUKT_OF', 'QUOSHUNT_OF', 'MOD_OF', 'BIGGR_OF', 'SMALLR_OF', 'SMOOSH']:
             return self.parse_expression()  # recurse
         else:
             row = self.rows[self.current_token_index] if self.rows else 0
@@ -76,7 +77,7 @@ class Parser:
     def parse_declaration_block(self):
         self.consume("WAZZUP")
         while self.get_current_token() == 'I_HAS_A':
-            self.parse_variable()
+            self.parse_variable_declaration()
         if self.get_current_token() == 'BUHBYE':
             self.consume("BUHBYE")
         else:
@@ -88,7 +89,7 @@ class Parser:
             # variable declaration
             if self.get_current_token() == "I_HAS_A":
                 print(f"{self.get_current_token()}")
-                self.parse_variable()
+                self.parse_variable_declaration()
             # print
             elif self.get_current_token() == "VISIBLE":
                 self.parse_print()
@@ -103,19 +104,19 @@ class Parser:
 
             # if/else
             elif self.get_current_token() == 'O_RLY?':
-                self.parse_o_rly(self)
+                self.parse_o_rly()
                 # we can add maybe block to if else parser
                 # we can also add no wai block to if else
             
             # switch
             elif self.get_current_token() == 'WTF?':
-                self.parse_wtf(self)
+                self.parse_wtf()
             elif self.get_current_token() == "IM_IN_YR":
-                self.parse_loop(self)
+                self.parse_loop()
             # error
 
     # Parses through Variable Declarations
-    def parse_variable(self):
+    def parse_variable_declaration(self):
         self.consume('I_HAS_A')
         id_lexeme = self.lexemes[self.current_token_index] # Just to check for uniitalized vairables
         self.consume('ID') # might need to store variable name in the future
@@ -143,17 +144,64 @@ class Parser:
         self.consume('VISIBLE')
         operands = [self.parse_value_or_expression()]
         
-        while self.get_current_token() == 'PLUS':
-            self.consume('PLUS')
+        while self.get_current_token() in ['PLUS', 'AN']:
+            self.consume(self.get_current_token())
             operands.append(self.parse_value_or_expression())
         print(f"VISIBLE concatenation: {operands}")
-
-    def parse_assignment(self):
-        current_token = self.get_current_token
+    
+    def parse_smoosh(self):
+        self.consume("SMOOSH")
+        operands = [self.parse_value_or_expression()] # first operand
         
-        self.consume('ID')
-
-        self.consume('ID') # should be storing R token, add it to lexemes
+        while self.get_current_token() == "AN":
+            self.consume("AN")
+            operands.append(self.parse_value_or_expression())
+        
+        return {
+            "op": "SMOOSH",
+            "operands": operands
+        }
+    def parse_assignment(self):
+        # print("we in here!")
+        var_name = self.consume('ID')
+        tok = self.get_current_token()
+        if tok == 'R':
+            self.consume('R')
+            # Check if its a MAEK typecast
+            if self.get_current_token() in ["MAEK", "MAEK_A"]:
+                self.consume(self.get_current_token())
+                source_var = self.consume('ID')
+                target_type = self.consume(self.get_current_token())
+                value = {
+                'type': 'typecast_assignment',
+                'source': source_var,
+                'target_type': target_type
+                }
+            else: # Else just normal assignment
+                value = self.parse_value_or_expression()
+        elif tok == 'IS_NOW_A':
+            self.consume("IS_NOW_A")
+            new_type = self.consume(self.get_current_token())
+            #TODO: should store values in a symbol table
+            '''
+            example:
+            self.symbol_table[var_name] = {
+                'type': 'type_only_assignment',
+                'new_type': new_type
+            }
+            '''
+        else:
+            # Unexpected token after variable
+            row = self.rows[self.current_token_index] if self.rows else 0
+            col = self.columns[self.current_token_index] if self.columns else 0
+            raise SyntaxError(
+                f"Unexpected token '{tok}' after variable '{var_name}' "
+                f"at line {row}, column {col}"
+        )
+        
+        
+        #TODO: should store values in a symbol table
+        
     def parse_gimmeh(self): #User Input
         self.consume("GIMMEH")
         
