@@ -63,7 +63,7 @@ class LexicalAnalyzer:
             ('BUHBYE',     r'\bBUHBYE\b'),
         
             ('ITZ',        r'\bITZ\b'),
-            ('ITS',        r'\bITZ\b'), # removed ITS from ITS MOD OF regex then placed it here
+            ('ITS',        r'\bITS\b'), # removed ITS from ITS MOD OF regex then placed it here
             ('R',          r'\bR\b'),
             ('VISIBLE',    r'\bVISIBLE\b'),
             ('GIMMEH',     r'\bGIMMEH\b'),
