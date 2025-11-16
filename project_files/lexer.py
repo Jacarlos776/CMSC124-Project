@@ -75,7 +75,7 @@ class LexicalAnalyzer:
             ('MEBBE',      r'\bMEBBE\b'),
             ('OIC',        r'\bOIC\b'),
         
-            ('WTF',        r'\bWTF\?\b'),
+            ('WTF',        r'\bWTF\?'),
             ('OMG',        r'\bOMG\b'),
             ('OMGWTF',     r'\bOMGWTF\b'),
         
