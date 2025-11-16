@@ -23,7 +23,7 @@ HAI
 		OMG 2
 			VISIBLE "Enter bill cost: "
 			GIMMEH input
-			VISIBLE "Tip: " PRODUCKT OF input AN 0.1
+			VISIBLE "Tip: " PRODUKT OF input AN 0.1
 			GTFO
 		OMG 3
 			VISIBLE "Enter width: "
