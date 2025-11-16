@@ -99,7 +99,7 @@ class Parser:
 
             # input
             elif self.get_current_token() == 'GIMMEH':
-                self.parse_gimmeh(self)
+                self.parse_gimmeh()
 
             # if/else
             elif self.get_current_token() == 'O_RLY?':
@@ -162,11 +162,18 @@ class Parser:
 
         self.consume('ID') # should be storing R token, add it to lexemes
     def parse_gimmeh(self): #User Input
-        #add type checker -- YARN
-        self.consume('GIMMEH')
-        #symbol table for input
-
+        self.consume("GIMMEH")
         
+        if self.get_current_token() == 'ID':
+            var_name =  self.consume("ID")
+            print(f"GIMMEH input into variable: {var_name}")
+        else:
+            row = self.rows[self.current_token_index] if self.rows else 0
+            col = self.columns[self.current_token_index] if self.columns else 0
+            raise SyntaxError(
+                f"Expected variable name after GIMMEH at line {row}, column {col}, "
+                f"found '{self.get_current_token()}'"
+            )
     def parse_o_rly(self): #\
         current_token = self.get_current_token()
         self.consume('O_RLY')
