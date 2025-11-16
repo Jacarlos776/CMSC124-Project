@@ -141,19 +141,12 @@ class Parser:
     
     def parse_print(self):
         self.consume('VISIBLE')
-        # print(f"Stuck here? {self.get_current_token()}")
-        if self.get_current_token() == 'ID':
-            print(f"{self.lexemes[self.current_token_index]}")
-            # print("Or here?")
-            self.consume('ID')
-        elif self.get_current_token() == 'YARN_LIT':
-            # print("Maybe here??")
-            self.consume('YARN_LIT')
-        elif self.get_current_token() in ["SUM_OF", "DIFF_OF", "PRODUKT_OF", "QUOSHUNT_OF", "BIGGR_OF", "SMALLR_OF", "MOD_OF"]:
-            # print("Who knows man??")
-            expr = self.parse_expression()
-            print(expr)
+        operands = [self.parse_value_or_expression()]
         
+        while self.get_current_token() == 'PLUS':
+            self.consume('PLUS')
+            operands.append(self.parse_value_or_expression())
+        print(f"VISIBLE concatenation: {operands}")
 
     def parse_assignment(self):
         current_token = self.get_current_token
