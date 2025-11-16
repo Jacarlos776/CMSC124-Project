@@ -19,12 +19,16 @@ class Parser:
     # Matches and consumes expected token, else returns an error
     def consume(self, expected_token_type):
         current_token = self.get_current_token()
-        
+
         if current_token == expected_token_type:
+            value = self.lexemes[self.current_token_index]
             self.current_token_index += 1
+            print(f"Parsed: {current_token} -> {value}")
+            return value
         else:
+            # Get line and column info
             if self.current_token_index < len(self.tokens):
-                rows = self.rows[self.current_token_index]
+                row = self.rows[self.current_token_index]
                 col = self.columns[self.current_token_index]
             else:
                 row = self.rows[-1] if self.rows else 0 
@@ -34,12 +38,31 @@ class Parser:
                 f"Expected '{expected_token_type}', but found '{current_token}'"
             )
     
+    # Helper function for parsing values and expressions
+    def parse_value_or_expression(self):
+        tok = self.get_current_token()
+        if tok in ['NUMBR_LIT', 'NUMBAR_LIT', 'YARN_LIT', 'TROOF_LIT']:
+            return {'type': 'literal', 'value': self.consume(tok)}
+        elif tok == 'ID':
+            return {'type': 'var', 'name': self.consume('ID')}
+        elif tok in ['SUM_OF', 'DIFF_OF', 'PRODUKT_OF', 'QUOSHUNT_OF', 'MOD_OF', 'BIGGR_OF', 'SMALLR_OF']:
+            return self.parse_expression()  # recurse
+        else:
+            row = self.rows[self.current_token_index] if self.rows else 0
+            col = self.columns[self.current_token_index] if self.columns else 0
+            raise SyntaxError(
+                f"Syntax error at line {row}, column {col}: unexpected token '{tok}' in expression"
+            )
     # --||-- Recursive Descent Functions --||--
     
     # Parses through Program -> HAI <Statements> KTHXBYE
     def parse_program(self):
         self.consume('HAI')
         
+        # Variable declaration block
+        if self.get_current_token() == 'WAZZUP':
+            self.parse_declaration_block()
+
         self.parse_statements()
         
         self.consume('KTHXBYE')
@@ -49,74 +72,88 @@ class Parser:
         
         return True
     
+    # Parses through the declaration block
+    def parse_declaration_block(self):
+        self.consume("WAZZUP")
+        while self.get_current_token() == 'I_HAS_A':
+            self.parse_variable()
+        if self.get_current_token() == 'BUHBYE':
+            self.consume("BUHBYE")
+        else:
+            raise SyntaxError("Syntax Error: Did not end declaration block with BUHBYE or added a non-declaring keyword inside of declaration block")
+        
     # Parses through Statements -> <statement> <linebreak> <statements> <comment> | ε
     def parse_statements(self):
-        current_token = self.get_current_token()
-
-        while current_token != 'KTHXBYE' and current_token != 'EOF':
+        while self.get_current_token() != 'KTHXBYE' and self.get_current_token() != 'EOF':
             # variable declaration
-            if current_token == "I_HAS_A":
-                print(f"{current_token}")
+            if self.get_current_token() == "I_HAS_A":
+                print(f"{self.get_current_token()}")
                 self.parse_variable()
             # print
-            elif current_token == "VISIBLE":
+            elif self.get_current_token() == "VISIBLE":
                 self.parse_print()
             
             # assignment
-            elif current_token == "ID":
+            elif self.get_current_token() == "ID":
                 self.parse_assignment()
 
             # input
-            elif current_token == 'GIMMEH':
+            elif self.get_current_token() == 'GIMMEH':
                 self.parse_gimmeh(self)
 
             # if/else
-            elif current_token == 'O_RLY?':
+            elif self.get_current_token() == 'O_RLY?':
                 self.parse_o_rly(self)
                 # we can add maybe block to if else parser
                 # we can also add no wai block to if else
             
             # switch
-            elif current_token == 'WTF?':
+            elif self.get_current_token() == 'WTF?':
                 self.parse_wtf(self)
-            elif current_token == "IM_IN_YR":
+            elif self.get_current_token() == "IM_IN_YR":
                 self.parse_loop(self)
             # error
-            
-            current_token = self.get_current_token()
 
     # Parses through Variable Declarations
     def parse_variable(self):
-        current_token = self.get_current_token()
         self.consume('I_HAS_A')
-        self.consume('ID')
+        id_lexeme = self.lexemes[self.current_token_index] # Just to check for uniitalized vairables
+        self.consume('ID') # might need to store variable name in the future
+        
+        init_value = {'kind': 'NOOB', 'value': None} # Store variable as unitialized first.
+        
+        # If the variable is initialized
+        if self.get_current_token() == "ITZ":
+            self.consume("ITZ")
+            self.parse_value_or_expression()
 
-        if current_token == 'NUMBR_LIT':
-            self.consume('NUMBR_LIT')
-        elif current_token == 'NUMBAR_LIT':
-            self.consume('NUMBAR_LIT')
-        elif current_token == 'YARN_LIT':
-            self.consume('YARN_LIT')
-        elif current_token == '':
-            print("BOO! lean!")
-            #boolean
-        else:
-            row = self.rows[-1] if self.rows else 0 
-            col = self.columns[-1] if self.columns else 0
-            raise SyntaxError(
-                f"Syntax error at line {row}, column {col}. "
-                f"Expected a variable, but found '{current_token}'"
-            )
-        # store initial value somewhere
+    def parse_expression(self):
+        op = self.consume(self.get_current_token()) # SUM_OF, DIFF_OF, etc.
+        operands = []
+        
+        operands.append(self.parse_value_or_expression())
+        
+        while self.get_current_token() == "AN":
+            self.consume("AN")
+            operands.append(self.parse_value_or_expression())
+        
+        return {'op': op, 'operands': operands}
+    
     def parse_print(self):
-        current_token = self.get_current_token
-
         self.consume('VISIBLE')
-
-        if current_token == 'ID':
+        # print(f"Stuck here? {self.get_current_token()}")
+        if self.get_current_token() == 'ID':
+            print(f"{self.lexemes[self.current_token_index]}")
+            # print("Or here?")
             self.consume('ID')
-        elif current_token == 'YARN_LIT':
+        elif self.get_current_token() == 'YARN_LIT':
+            # print("Maybe here??")
             self.consume('YARN_LIT')
+        elif self.get_current_token() in ["SUM_OF", "DIFF_OF", "PRODUKT_OF", "QUOSHUNT_OF", "BIGGR_OF", "SMALLR_OF", "MOD_OF"]:
+            # print("Who knows man??")
+            expr = self.parse_expression()
+            print(expr)
+        
 
     def parse_assignment(self):
         current_token = self.get_current_token
