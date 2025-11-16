@@ -52,6 +52,7 @@ class LexicalAnalyzer:
         
             ('FOUND_YR',       r'\bFOUND\s+YR\b'),
             ('I_IZ',           r'\bI\s+IZ\b'),
+            ('MAEK_A', r'\bMAEK A\b'), # Found this in test case but in the project specs it was only MAEK.
         
             # =======================
             #   SINGLE-WORD KEYWORDS
