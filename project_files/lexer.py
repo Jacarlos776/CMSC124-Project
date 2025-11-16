@@ -25,7 +25,7 @@ class LexicalAnalyzer:
             ('DIFF_OF',        r'\bDIFF\s+OF\b'),
             ('PRODUKT_OF',     r'\bPRODUKT\s+OF\b'),
             ('QUOSHUNT_OF',    r'\bQUOSHUNT\s+OF\b'),
-            ('MOD_OF',         r'\bMOD\s+OF\b'),
+            ('MOD_OF',         r'\bMOD\s+OF\b'), # removed ITS from ITS MOD OF, moved it down to single word keywords
         
             ('BIGGR_OF',       r'\bBIGGR\s+OF\b'),
             ('SMALLR_OF',      r'\bSMALLR\s+OF\b'),
@@ -40,7 +40,7 @@ class LexicalAnalyzer:
             ('DIFFRINT',       r'\bDIFFRINT\b'),
             ('IS_NOW_A',       r'\bIS\s+NOW\s+A\b'),
         
-            ('O_RLY',          r'\bO\s+RLY\?\b'),
+            ('O_RLY',          r'\bO\s+RLY\?'),
             ('NO_WAI',         r'\bNO\s+WAI\b'),
             ('YA_RLY',         r'\bYA\s+RLY\b'),
         
@@ -63,6 +63,7 @@ class LexicalAnalyzer:
             ('BUHBYE',     r'\bBUHBYE\b'),
         
             ('ITZ',        r'\bITZ\b'),
+            ('ITS',        r'\bITZ\b'), # removed ITS from ITS MOD OF regex then placed it here
             ('R',          r'\bR\b'),
             ('VISIBLE',    r'\bVISIBLE\b'),
             ('GIMMEH',     r'\bGIMMEH\b'),
@@ -90,7 +91,7 @@ class LexicalAnalyzer:
             # --- Newly added (missing) ---
             ('AN',         r'\bAN\b'),
             ('A',          r'\bA\b'),
-        
+            ('IT',         r'\bIT\b'), # implicit variable in LOLCode
             # =======================
             #   LITERALS
             # =======================
