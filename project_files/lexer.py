@@ -92,6 +92,7 @@ class LexicalAnalyzer:
             ('AN',         r'\bAN\b'),
             ('A',          r'\bA\b'),
             ('IT',         r'\bIT\b'), # implicit variable in LOLCode
+            ('PLUS',       r'\+'), # for concatenation in VISIBLE
             # =======================
             #   LITERALS
             # =======================
