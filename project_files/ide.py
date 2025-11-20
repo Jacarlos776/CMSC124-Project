@@ -7,7 +7,6 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QFont, QColor, QTextCharFormat, QSyntaxHighlighter
 from PyQt6.QtCore import Qt
 
-
 # function that will highlight LOL Code syntax
 class highlight(QSyntaxHighlighter):
     def __init__(self, document):
@@ -33,7 +32,6 @@ class highlight(QSyntaxHighlighter):
                 self.setFormat(index, len(pattern), fmt)
                 index = text.find(pattern, index + len(pattern))
 
-
 # left panel: widget that accepts file drops
 class left_panel(QWidget):
     def __init__(self, parent_window):
@@ -51,7 +49,6 @@ class left_panel(QWidget):
 
     def dropEvent(self, event):
         self.parent_window.process_dropped_files(event)
-
 
 # main window
 class ide(QWidget):
@@ -88,14 +85,17 @@ class ide(QWidget):
         right_panel = QVBoxLayout()
         main_layout.addLayout(right_panel, 3)
 
-        # top buttons: save and run
+        # top buttons: save, run, delete
         top_buttons = QHBoxLayout()
         self.save_button = QPushButton("Save")
         self.save_button.clicked.connect(self.save_file)
+        self.delete_button = QPushButton("Delete")
+        self.delete_button.clicked.connect(self.delete_file)
         self.run_button = QPushButton("Run")
-        self.run_button.clicked.connect(self.run_pressed)
+        self.run_button.clicked.connect(self.run_file)
 
         top_buttons.addWidget(self.save_button)
+        top_buttons.addWidget(self.delete_button)
         top_buttons.addWidget(self.run_button)
         top_buttons.addStretch()
         right_panel.addLayout(top_buttons)
@@ -116,7 +116,6 @@ class ide(QWidget):
         self.terminal.setFixedHeight(180)
         self.terminal.setStyleSheet("background-color: #3a3a3a; color: white;")
         right_panel.addWidget(self.terminal)
-
 
     # process dropped files
     def process_dropped_files(self, event):
@@ -166,9 +165,39 @@ class ide(QWidget):
 
     # function to handle run button press
     # checker for now
-    def run_pressed(self):
+    def run_file(self):
         self.terminal.append("Run button pressed!")
 
+    # function to handle delete button press
+    def delete_file(self):
+        item = self.file_list.currentItem()
+        if not item:
+            QMessageBox.warning(self, "No File Selected", "Please select a file to delete.")
+            return
+
+        filename = item.text()
+
+        confirm = QMessageBox.question(
+            self,
+            "Delete File",
+            f"Remove '{filename}' from the IDE?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        # remove from internal dict
+        if filename in self.file_paths:
+            del self.file_paths[filename]
+
+        # remove from list widget
+        row = self.file_list.row(item)
+        self.file_list.takeItem(row)
+        
+        # if deleted file was being edited, clear editor
+        self.editor.clear()
+        self.terminal.append(f"Removed '{filename}' from the IDE.")
 
 # main
 if __name__ == "__main__":
