@@ -17,6 +17,12 @@ class highlight(QSyntaxHighlighter):
             "ITZ", "R", "SUM OF", "DIFF OF", "PRODUKT OF",
             "QUOSHUNT OF", "MOD OF", "BIGGR OF", "SMALLR OF",
             "O RLY?", "YA RLY", "NO WAI", "OIC", "BTW", "OBTW", "TLDR"
+            "BOTH OF", "EITHER OF", "WON OF", "ANY OF", "ALL OF", "BOTH SAEM", 
+            "DIFFRINT", "IS NOW A", "O RLY", "NO WAI", "YA RLY", "IM IN YR", 
+            "IM OUTTA YR", "HOW IZ I", "IF U SAY SO", "FOUND YR", "I IZ", "MAEK A",
+            "WAZZUP", "BUHBYE", "ITZ", "R", "VISIBLE", "GIMMEH", "SMOOSH", "MAEK", 
+            "NOT", "MEBBE", "OIC", "WTF", "OMG", "OMGWTF", "UPPIN", "NERFIN", "YR", 
+            "TIL", "WILE", "GTFO", "MKAY"
         ]
 
         self.keyword_format = QTextCharFormat()
