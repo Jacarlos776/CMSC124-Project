@@ -46,7 +46,12 @@ class Parser:
             return {'type': 'literal', 'value': self.consume(tok)}
         elif tok == 'ID':
             return {'type': 'var', 'name': self.consume('ID')}
-        elif tok in ['SUM_OF', 'DIFF_OF', 'PRODUKT_OF', 'QUOSHUNT_OF', 'MOD_OF', 'BIGGR_OF', 'SMALLR_OF', 'SMOOSH']:
+        elif tok in [
+            'SUM_OF', 'DIFF_OF', 'PRODUKT_OF', 'QUOSHUNT_OF',
+            'MOD_OF', 'BIGGR_OF', 'SMALLR_OF', 'SMOOSH',
+            'BOTH_OF', 'EITHER_OF', 'WON_OF', 'ANY_OF', 'ALL_OF', 
+            'NOT', 'BOTH_SAEM', 'DIFFRINT'
+        ]:
             return self.parse_expression()  # recurse
         else:
             row = self.rows[self.current_token_index] if self.rows else 0
@@ -84,37 +89,42 @@ class Parser:
             raise SyntaxError("Syntax Error: Did not end declaration block with BUHBYE or added a non-declaring keyword inside of declaration block")
         
     # Parses through Statements -> <statement> <linebreak> <statements> <comment> | ε
-    def parse_statements(self):
-        while self.get_current_token() != 'KTHXBYE' and self.get_current_token() != 'EOF':
-            # variable declaration
-            if self.get_current_token() == "I_HAS_A":
-                print(f"{self.get_current_token()}")
-                self.parse_variable_declaration()
-            # print
-            elif self.get_current_token() == "VISIBLE":
-                self.parse_print()
-            
-            # assignment
-            elif self.get_current_token() == "ID":
-                self.parse_assignment()
+    def parse_statements(self, stop_tokens=None):
+        if stop_tokens is None:
+            stop_tokens = []
 
-            # input
-            elif self.get_current_token() == 'GIMMEH':
-                self.parse_gimmeh()
+        nodes = []
 
-            # if/else
-            elif self.get_current_token() == 'O_RLY?':
-                self.parse_o_rly()
-                # we can add maybe block to if else parser
-                # we can also add no wai block to if else
-            
-            # switch
-            elif self.get_current_token() == 'WTF?':
-                self.parse_wtf()
-            elif self.get_current_token() == "IM_IN_YR":
-                self.parse_loop()
-            # error
+        while self.get_current_token() not in stop_tokens:
+            if self.get_current_token() in ('KTHXBYE', 'EOF'):
+                break
+            nodes.append(self.parse_statement())
 
+        return nodes
+    
+    def parse_statement(self):
+        tok = self.get_current_token()
+
+        if tok == "I_HAS_A":
+            return self.parse_variable_declaration()
+        elif tok == "VISIBLE":
+            return self.parse_print()
+        elif tok == "GIMMEH":
+            return self.parse_gimmeh()
+        elif tok == "ID":
+            if self.lookahead() in ("R", "IS_NOW_A"):
+                return self.parse_assignment()
+            else:
+                return self.parse_value_or_expression()
+        elif tok == "O_RLY?":
+            return self.parse_o_rly()
+        elif tok == "WTF?":
+            return self.parse_switch()
+        elif tok == "IM_IN_YR":
+            return self.parse_loop()
+        else:
+            raise SyntaxError(f"Unexpected token {tok}")
+        
     # Parses through Variable Declarations
     def parse_variable_declaration(self):
         self.consume('I_HAS_A')
@@ -131,13 +141,24 @@ class Parser:
     def parse_expression(self):
         op = self.consume(self.get_current_token()) # SUM_OF, DIFF_OF, etc.
         operands = []
-        
+        print(self.get_current_token())
+        # Handles NOT
+        if op == 'NOT':
+            operand = self.parse_value_or_expression()
+            return {
+                'op': op,
+                'operands': [operand]
+        }
+            
         operands.append(self.parse_value_or_expression())
         
         while self.get_current_token() == "AN":
             self.consume("AN")
             operands.append(self.parse_value_or_expression())
         
+        # Added optional MKAY based on 05_bool.lol testcase
+        if self.get_current_token() == "MKAY":
+            self.consume("MKAY")
         return {'op': op, 'operands': operands}
     
     def parse_print(self):
@@ -208,6 +229,7 @@ class Parser:
         if self.get_current_token() == 'ID':
             var_name =  self.consume("ID")
             print(f"GIMMEH input into variable: {var_name}")
+            print(self.get_current_token())
         else:
             row = self.rows[self.current_token_index] if self.rows else 0
             col = self.columns[self.current_token_index] if self.columns else 0
@@ -215,34 +237,28 @@ class Parser:
                 f"Expected variable name after GIMMEH at line {row}, column {col}, "
                 f"found '{self.get_current_token()}'"
             )
-    def parse_o_rly(self): #\
-        current_token = self.get_current_token()
+
+    def parse_o_rly(self, condition_expr=None): # Optional conditional expression in o rly
+        print(self.get_current_token())
         self.consume('O_RLY')
-
-
-
-        while current_token == 'YA_RLY':
-            self.parse_ya_rly(self)
         
-        while current_token == 'MEBBE':
-            self.parse_mebbe(self)
+        # parse YA RLY
+        if self.get_current_token() == 'YA_RLY':
+            self.consume('YA_RLY')
+            self.parse_statement()
+        
+        # optional multiple MEBBE blocks
+        while self.get_current_token() == 'MEBBE':
+            self.consume('MEBBE')
+            expr = self.parse_value_or_expression()
+            self.parse_statement()
+        
+        # optional else block
+        if self.get_current_token() == 'NO_WAI':
+            self.consume('NO_WAI')
+            self.parse_statement()
 
-        while current_token == 'NO_WAI':
-            self.parse_no_wai(self)
-
-        self.parse_oic('OIC')
-
-    def parse_ya_rly(self):
-        self.consume('ID')
-
-    def parse_mebbe(self):
-        self.consume('ID')
-
-    def parse_no_wai(self):
-        self.consume('ID')
-
-    def parse_oic(self):
-        self.consume('ID')
+        self.consume('OIC')
     
     # parse statement wtf
     def parse_wtf(self):
@@ -252,13 +268,13 @@ class Parser:
         while self.get_current_token() == 'OMG':
             self.consume('OMG')
             self.parse_literal()
-            self.parse_statements()
+            self.parse_statement()
             if self.get_current_token() == 'GTFO':
                 self.consume('GTFO')
 
         if self.get_current_token() == 'OMGWTF':
             self.consume('OMGWTF')
-            self.parse_statements()
+            self.parse_statement()
 
         self.consume('OIC')
 
@@ -266,7 +282,7 @@ class Parser:
     def parse_loop(self):
         self.consume('IM_IN_YR')
         self.consume('ID')
-        self.parse_statements()
+        self.parse_statement()
         self.consume('IM_OUTTA_YR')
         self.consume('ID')
 
