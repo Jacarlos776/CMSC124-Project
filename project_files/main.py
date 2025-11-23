@@ -33,10 +33,14 @@ try:
     
     # Call Parser
     parser = Parser(token, lexeme, row, column)
-    if (parser.parse_program()):
-        print("Parsing successful! Program is valid.")
-    else:
+    try:
+        ast = parser.parse_program()
+        print("\nParsing successful! Program is valid.")
+        print("\n=== AST OUTPUT ===")
+        print(ast)
+    except SyntaxError as e:
         print("Parsing failed...")
+        print(e)
 
 except RuntimeError as e:
     print(f"Lexical Error: {e}")
