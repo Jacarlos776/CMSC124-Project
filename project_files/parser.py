@@ -1,7 +1,7 @@
 # The parser class implements a Recursive Descent Parser (RDP). It works by taking the stream of tokens from the lexer then checking if the sequence conforms to the grammar we set.
 # 
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 
 # === || AST node classes || ===
 @dataclass
@@ -274,10 +274,7 @@ class Parser:
             # Handles NOT
             if op == 'NOT':
                 operand = self.parse_value_or_expression()
-                return {
-                    'op': op,
-                    'operands': [operand]
-            }
+                return Expression(op=op, operands=[operand])
                 
             operands = [self.parse_value_or_expression()]
             while self.get_current_token() == "AN":
