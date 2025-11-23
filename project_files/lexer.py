@@ -92,7 +92,7 @@ class LexicalAnalyzer:
             # --- Newly added (missing) ---
             ('AN',         r'\bAN\b'),
             ('A',          r'\bA\b'),
-            ('IT',         r'\bIT\b'), # implicit variable in LOLCode
+            #('IT',         r'\bIT\b'), # implicit variable in LOLCode. Update: removed it again, parsing the IT as an ID instead and we'll handle it in the semantic phase
             ('PLUS',       r'\+'), # for concatenation in VISIBLE
             # =======================
             #   LITERALS
