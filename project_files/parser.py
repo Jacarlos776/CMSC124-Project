@@ -265,28 +265,77 @@ class Parser:
     
     def parse_expression(self):
         op_tok = self.get_current_token()
-        
+
         # If the expression begins with an operator
-        if op_tok in ('NOT', 'SUM_OF', 'DIFF_OF', 'PRODUKT_OF', 'QUOSHUNT_OF', 'MOD_OF',
-                    'BIGGR_OF', 'SMALLR_OF', 'SMOOSH', 'BOTH_OF', 'EITHER_OF', 'WON_OF',
-                    'ANY_OF', 'ALL_OF', 'BOTH_SAEM', 'DIFFRINT'):
-            op = self.consume(op_tok) # SUM_OF, DIFF_OF, etc.
-            # Handles NOT
+        if op_tok in (
+            'NOT', 'SUM_OF', 'DIFF_OF', 'PRODUKT_OF', 'QUOSHUNT_OF', 'MOD_OF',
+            'BIGGR_OF', 'SMALLR_OF', 'SMOOSH', 'BOTH_OF', 'EITHER_OF', 'WON_OF',
+            'ANY_OF', 'ALL_OF', 'BOTH_SAEM', 'DIFFRINT'
+        ):
+            op = op_tok
+            self.consume(op_tok)
+
+            # Unary
             if op == 'NOT':
                 operand = self.parse_value_or_expression()
                 return Expression(op=op, operands=[operand])
-                
-            operands = [self.parse_value_or_expression()]
-            while self.get_current_token() == "AN":
+
+            # First Operand
+            first_operand = self.parse_value_or_expression()
+
+            binary_ops = {
+                'SUM_OF', 'DIFF_OF', 'PRODUKT_OF', 'QUOSHUNT_OF', 'MOD_OF',
+                'BIGGR_OF', 'SMALLR_OF', 'BOTH_OF', 'EITHER_OF', 'WON_OF',
+                'BOTH_SAEM', 'DIFFRINT'
+            }
+
+            infinite_ops = {'SMOOSH', 'ALL_OF', 'ANY_OF'}
+
+            # For binary operators
+            if op in binary_ops:
+
+                # Must have exactly 1 AN
+                if self.get_current_token() != "AN":
+                    row = self.rows[self.current_token_index]
+                    col = self.columns[self.current_token_index]
+                    raise SyntaxError(
+                        f"Operator '{op.replace('_',' ')}' requires 'AN <operand>' "
+                        f"(line {row}, col {col})"
+                    )
+
                 self.consume("AN")
-                operands.append(self.parse_value_or_expression())
+                second_operand = self.parse_value_or_expression()
+
+                # Binary operators should stop after two operators. If the expression is nested, it should be parsed inside of parse_value_or_expression()
+                return Expression(op=op, operands=[first_operand, second_operand])
+
+            # For more than 2 operators
+            if op in infinite_ops:
+                operands = [first_operand]
+
+                # Continue consuming "AN <operand>" repeatedly
+                while self.get_current_token() == "AN":
+                    self.consume("AN")
+                    operands.append(self.parse_value_or_expression())
+
+                # Optional MKAY on ALL_OF / ANY_OF
+                if op in {'ALL_OF', 'ANY_OF'} and self.get_current_token() == "MKAY":
+                    self.consume("MKAY")
+
+                # Must have at least 2 operands
+                if len(operands) < 2:
+                    row = self.rows[self.current_token_index]
+                    col = self.columns[self.current_token_index]
+                    raise SyntaxError(
+                        f"Operator '{op.replace('_',' ')}' expects 2 or more operands "
+                        f"(line {row}, col {col})"
+                    )
+
+                return Expression(op=op, operands=operands)
             
-            # Added optional MKAY based on 05_bool.lol testcase
-            if self.get_current_token() == "MKAY":
-                self.consume("MKAY")
-            return Expression(op=op, operands=operands)
-        
-        # Else expression can also be a value (literal or var)
+            raise SyntaxError(f"Unexpected operator '{op_tok}' in expression.")
+
+        # Else its a literal or variable
         return self.parse_value_or_expression()
     
     def parse_print(self):
