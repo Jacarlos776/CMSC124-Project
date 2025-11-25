@@ -1,5 +1,6 @@
 from lexer import LexicalAnalyzer
 from parser import Parser
+from interpreter import Interpreter
 import sys
 
 # -- MAIN --
@@ -28,19 +29,23 @@ try:
     # Call tokenize
     token, lexeme, row, column = Analyzer.tokenize(code)
 
-    print("\nRecognized Tokens \n", token)
-    print("\nRecognized lexemes \n", lexeme)
+    # print("\nRecognized Tokens \n", token)
+    # print("\nRecognized lexemes \n", lexeme)
     
     # Call Parser
     parser = Parser(token, lexeme, row, column)
     try:
         ast = parser.parse_program()
-        print("\nParsing successful! Program is valid.")
+        print("\nParsing successful! Program is valid.\n")
         print("\n=== AST OUTPUT ===")
         print(ast)
     except SyntaxError as e:
         print("Parsing failed...")
         print(e)
+    
+    # Call interpreter
+    interpreter = Interpreter(ast)
+    interpreter.run()
 
 except RuntimeError as e:
     print(f"Lexical Error: {e}")
