@@ -6,12 +6,13 @@ from typing import Any, List, Optional
 # === || AST node classes || ===
 @dataclass
 class ASTNode:
-    pass
+    pass # just pass as ASTNode is just an abstract base class
 
 @dataclass
 class Program(ASTNode):
     declarations: List[ASTNode]
     statements: List[ASTNode]
+    functions: List[ASTNode]
 @dataclass
 class VarDecl(ASTNode):
     name: str
@@ -94,6 +95,10 @@ class ReturnStmt(ASTNode):
 @dataclass
 class BreakStmt(ASTNode):
     pass
+
+@dataclass
+class ImplicitIT(ASTNode):
+    pass
 # === || Parser || ===
 class Parser:
     def __init__(self, tokens, lexemes, rows, columns):
@@ -162,7 +167,7 @@ class Parser:
         if self.get_current_token() != 'EOF':
             raise SyntaxError("Syntax Error: Extra tokens found after KTHXBYE.")
         
-        return Program(declarations=declarations, statements=statements)
+        return Program(declarations=declarations, statements=statements, functions=functions)
     
     # Parses through the declaration block
     def parse_declaration_block(self):
@@ -251,6 +256,8 @@ class Parser:
             return Literal(value=val)
         if tok == 'ID':
             name = self.consume('ID')
+            if name == "IT":
+                return ImplicitIT()
             return VarRef(name=name)
         if tok == 'SMOOSH':
             return self.parse_smoosh()
@@ -502,7 +509,7 @@ class Parser:
         body = []
         return_expr = None
         
-        while self.get_current_token() not in ("FOUND", "IF_U_SAY_SO"):
+        while self.get_current_token() not in ("FOUND_YR", "IF_U_SAY_SO"):
             body.append(self.parse_statement())
             
         if self.get_current_token() == "FOUND_YR":
@@ -524,7 +531,10 @@ class Parser:
             while self.get_current_token() == "AN":
                 self.consume("AN")
                 args.append(self.parse_call_arg())
-
+                
+        if self.get_current_token() == 'MKAY':
+            self.consume("MKAY")
+            
         return FunctionCall(name=name, args=args)
     
     def parse_call_arg(self):
