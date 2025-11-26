@@ -19,7 +19,6 @@ HAI
 			VISIBLE "Enter birth year: "
 			GIMMEH input
 			VISIBLE DIFF OF 2022 AN input
-OBTW
 	BTW uncomment this portion if you have MEBBE
 	BTW else, this portion should be ignored
 
@@ -33,7 +32,6 @@ OBTW
 			VISIBLE "Square Area: " PRODUKT OF input AN input
 		MEBBE BOTH SAEM choice AN 0
 			VISIBLE "Goodbye"
-TLDR
 		NO WAI
 			VISIBLE "Invalid Input!"
 	OIC

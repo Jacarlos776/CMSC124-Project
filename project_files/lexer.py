@@ -92,7 +92,7 @@ class LexicalAnalyzer:
             # --- Newly added (missing) ---
             ('AN',         r'\bAN\b'),
             ('A',          r'\bA\b'),
-            ('IT',         r'\bIT\b'), # implicit variable in LOLCode
+            #('IT',         r'\bIT\b'), # implicit variable in LOLCode. Update: removed it again, parsing the IT as an ID instead and we'll handle it in the semantic phase
             ('PLUS',       r'\+'), # for concatenation in VISIBLE
             # =======================
             #   LITERALS
@@ -170,6 +170,6 @@ class LexicalAnalyzer:
                 lexeme.append(token_lexeme)
                 row.append(self.lin_num)
                 # To print information about a Token
-                print('Token = {0}, Lexeme = \'{1}\', Row = {2}, Column = {3}'.format(token_type, token_lexeme, self.lin_num, col))
+                # print('Token = {0}, Lexeme = \'{1}\', Row = {2}, Column = {3}'.format(token_type, token_lexeme, self.lin_num, col))
 
         return token, lexeme, row, column
