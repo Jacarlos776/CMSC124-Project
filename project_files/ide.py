@@ -1,5 +1,6 @@
 import sys
 import os
+import subprocess
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QListWidget, QVBoxLayout, QLabel,
     QHBoxLayout, QTextEdit, QPushButton, QMessageBox, QFrame
@@ -172,7 +173,53 @@ class ide(QWidget):
     # function to handle run button press
     # checker for now
     def run_file(self):
-        self.terminal.append("Run button pressed!")
+        # save current file first
+        item = self.file_list.currentItem()
+        if not item:
+            QMessageBox.warning(self, "No File Selected", "Please select a file to run.")
+            return
+
+        filename = item.text()
+        filepath = self.file_paths[filename]
+
+        # write current editor contents to disk
+        try:
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(self.editor.toPlainText())
+        except Exception as e:
+            QMessageBox.critical(self, "Save Error", f"Could not save file: {e}")
+            return
+
+        self.terminal.append(f"Running {filename}...")
+
+        # run the project's main runner (main.py) using the same Python interpreter
+        main_path = os.path.join(os.path.dirname(__file__), "main.py")
+        if not os.path.exists(main_path):
+            self.terminal.append("Error: main.py not found in project_files.")
+            return
+
+        try:
+            proc = subprocess.run(
+                [sys.executable, main_path, filepath],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+
+            if proc.stdout:
+                self.terminal.append(proc.stdout)
+            if proc.stderr:
+                self.terminal.append(proc.stderr)
+
+            if proc.returncode != 0:
+                self.terminal.append(f"Process exited with code {proc.returncode}")
+            else:
+                self.terminal.append("Run completed.")
+
+        except subprocess.TimeoutExpired:
+            self.terminal.append("Execution timed out. Program may be waiting for input.")
+        except Exception as e:
+            self.terminal.append(f"Error running file: {e}")
 
     # function to handle delete button press
     def delete_file(self):
