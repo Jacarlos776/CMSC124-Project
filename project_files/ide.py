@@ -3,10 +3,11 @@ import os
 import subprocess
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QListWidget, QVBoxLayout, QLabel,
-    QHBoxLayout, QTextEdit, QPushButton, QMessageBox, QFrame
+    QHBoxLayout, QTextEdit, QPushButton, QMessageBox, QFrame, QInputDialog,
+    QLineEdit
 )
 from PyQt6.QtGui import QFont, QColor, QTextCharFormat, QSyntaxHighlighter
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QProcess
 
 # function that will highlight LOL Code syntax
 class highlight(QSyntaxHighlighter):
@@ -100,10 +101,13 @@ class ide(QWidget):
         self.delete_button.clicked.connect(self.delete_file)
         self.run_button = QPushButton("Run")
         self.run_button.clicked.connect(self.run_file)
+        self.run_all_button = QPushButton("Run All")
+        self.run_all_button.clicked.connect(self.run_all_tests)
 
         top_buttons.addWidget(self.save_button)
         top_buttons.addWidget(self.delete_button)
         top_buttons.addWidget(self.run_button)
+        top_buttons.addWidget(self.run_all_button)
         top_buttons.addStretch()
         right_panel.addLayout(top_buttons)
 
@@ -123,6 +127,21 @@ class ide(QWidget):
         self.terminal.setFixedHeight(180)
         self.terminal.setStyleSheet("background-color: #3a3a3a; color: white;")
         right_panel.addWidget(self.terminal)
+
+        # input line for programs that request stdin (GIMMEH)
+        input_layout = QHBoxLayout()
+        self.input_line = QLineEdit()
+        self.input_line.setPlaceholderText("Type input here and press Enter to send to running program")
+        self.input_line.returnPressed.connect(self.send_input_to_process)
+        input_layout.addWidget(self.input_line)
+        self.send_button = QPushButton("Send")
+        self.send_button.clicked.connect(self.send_input_to_process)
+        input_layout.addWidget(self.send_button)
+        right_panel.addLayout(input_layout)
+
+        # process state
+        self.proc = None
+        self.run_queue = []
 
     # process dropped files
     def process_dropped_files(self, event):
@@ -198,28 +217,49 @@ class ide(QWidget):
             self.terminal.append("Error: main.py not found in project_files.")
             return
 
+        # If a process is already running, ask to terminate it first
+        if self.proc is not None and self.proc.state() == QProcess.ProcessState.Running:
+            resp = QMessageBox.question(self, "Process Running", "A program is already running. Stop it and start a new run?",
+                                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            if resp != QMessageBox.StandardButton.Yes:
+                return
+            self.proc.kill()
+
+        # start the process using QProcess for live IO
         try:
-            proc = subprocess.run(
-                [sys.executable, main_path, filepath],
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
+            # Ensure file saved already
+            code_text = self.editor.toPlainText()
 
-            if proc.stdout:
-                self.terminal.append(proc.stdout)
-            if proc.stderr:
-                self.terminal.append(proc.stderr)
+            self.terminal.append(f"----- Running {filename} -----")
 
-            if proc.returncode != 0:
-                self.terminal.append(f"Process exited with code {proc.returncode}")
-            else:
-                self.terminal.append("Run completed.")
+            main_path = os.path.join(os.path.dirname(__file__), "main.py")
 
-        except subprocess.TimeoutExpired:
-            self.terminal.append("Execution timed out. Program may be waiting for input.")
+            # configure QProcess
+            self.proc = QProcess(self)
+            self.proc.setProgram(sys.executable)
+            self.proc.setArguments([main_path, filepath])
+            self.proc.setWorkingDirectory(os.path.dirname(main_path))
+            self.proc.setProcessEnvironment(self.proc.processEnvironment())
+            self.proc.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+
+            self.proc.readyReadStandardOutput.connect(self._on_proc_output)
+            self.proc.readyReadStandardError.connect(self._on_proc_error)
+            self.proc.finished.connect(self._on_proc_finished)
+
+            # start
+            self.proc.start()
+            if not self.proc.waitForStarted(3000):
+                self.terminal.append("Failed to start process.")
+                self.proc = None
+                return
+
+            # If code expects a simple single GIMMEH, prompt immediately
+            if "GIMMEH" in code_text.upper():
+                # Let user type into the input box and press Enter to send
+                self.terminal.append("Program requested input (GIMMEH). Type into the input box and press Enter to send.")
+
         except Exception as e:
-            self.terminal.append(f"Error running file: {e}")
+            self.terminal.append(f"Error starting process: {e}")
 
     # function to handle delete button press
     def delete_file(self):
@@ -251,6 +291,119 @@ class ide(QWidget):
         # if deleted file was being edited, clear editor
         self.editor.clear()
         self.terminal.append(f"Removed '{filename}' from the IDE.")
+
+    # --- QProcess handlers and input forwarding ---
+    def _on_proc_output(self):
+        if not self.proc:
+            return
+        data = self.proc.readAllStandardOutput().data().decode()
+        if data:
+            self.terminal.append(data)
+
+    def _on_proc_error(self):
+        if not self.proc:
+            return
+        data = self.proc.readAllStandardError().data().decode()
+        if data:
+            self.terminal.append(data)
+
+    def _on_proc_finished(self, exitCode, exitStatus):
+        self.terminal.append(f"Process finished with exit code {exitCode}")
+        self.proc = None
+
+    def send_input_to_process(self):
+        text = self.input_line.text()
+        if not self.proc or self.proc.state() != QProcess.ProcessState.Running:
+            self.terminal.append("No running program to send input to.")
+            return
+        # write text + newline to stdin
+        try:
+            self.proc.write((text + "\n").encode())
+            self.proc.waitForBytesWritten(1000)
+            self.input_line.clear()
+        except Exception as e:
+            self.terminal.append(f"Failed to send input: {e}")
+
+    # --- Run All tests sequentially ---
+    def run_all_tests(self):
+        # build queue of test cases 01..07 from test_cases folder
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        test_dir = os.path.join(project_root, "test_cases")
+        if not os.path.exists(test_dir):
+            QMessageBox.critical(self, "Error", f"test_cases folder not found at {test_dir}")
+            return
+
+        self.run_queue = []
+        for i in range(1, 8):
+            pattern = os.path.join(test_dir, f"{i:02d}_*.lol")
+            # glob manually
+            import glob
+            matches = glob.glob(pattern)
+            if matches:
+                # take first match
+                self.run_queue.append(matches[0])
+            else:
+                self.terminal.append(f"Test case for {i:02d} not found.")
+
+        if not self.run_queue:
+            QMessageBox.information(self, "Run All", "No test cases found to run.")
+            return
+
+        # disable run buttons while running
+        self.run_button.setEnabled(False)
+        self.run_all_button.setEnabled(False)
+
+        # start first
+        self._start_next_in_queue()
+
+    def _start_next_in_queue(self):
+        if not self.run_queue:
+            self.terminal.append("All queued tests finished.")
+            self.run_button.setEnabled(True)
+            self.run_all_button.setEnabled(True)
+            return
+
+        next_path = self.run_queue.pop(0)
+        filename = os.path.basename(next_path)
+        # load file into editor and save to ensure current contents run
+        with open(next_path, "r", encoding="utf-8") as f:
+            self.editor.setPlainText(f.read())
+
+        # save file back to disk (it already is) but ensure file_list contains it
+        if filename not in self.file_paths:
+            self.file_paths[filename] = next_path
+            self.file_list.addItem(filename)
+
+        # start process for this test case
+        # reuse run_file's process starting logic but without asking
+        # If a process is already running, wait for it to finish (shouldn't happen here)
+        if self.proc is not None and self.proc.state() == QProcess.ProcessState.Running:
+            self.terminal.append("Waiting for previous process to finish...")
+            return
+
+        # start process
+        main_path = os.path.join(os.path.dirname(__file__), "main.py")
+        self.terminal.append(f"----- Running {filename} -----")
+        self.proc = QProcess(self)
+        self.proc.setProgram(sys.executable)
+        self.proc.setArguments([main_path, next_path])
+        self.proc.setWorkingDirectory(os.path.dirname(main_path))
+        self.proc.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+        self.proc.readyReadStandardOutput.connect(self._on_proc_output)
+        self.proc.readyReadStandardError.connect(self._on_proc_error)
+        # when finished, start next
+        def finished_and_continue(code, status):
+            self.terminal.append(f"Finished {filename} with code {code}")
+            self.proc = None
+            # small delay could be added; directly start next
+            self._start_next_in_queue()
+
+        self.proc.finished.connect(finished_and_continue)
+        self.proc.start()
+        if not self.proc.waitForStarted(3000):
+            self.terminal.append("Failed to start process for " + filename)
+            self.proc = None
+            self._start_next_in_queue()
 
 # main
 if __name__ == "__main__":
