@@ -101,13 +101,10 @@ class ide(QWidget):
         self.delete_button.clicked.connect(self.delete_file)
         self.run_button = QPushButton("Run")
         self.run_button.clicked.connect(self.run_file)
-        self.run_all_button = QPushButton("Run All")
-        self.run_all_button.clicked.connect(self.run_all_tests)
 
         top_buttons.addWidget(self.save_button)
         top_buttons.addWidget(self.delete_button)
         top_buttons.addWidget(self.run_button)
-        top_buttons.addWidget(self.run_all_button)
         top_buttons.addStretch()
         right_panel.addLayout(top_buttons)
 
@@ -189,7 +186,7 @@ class ide(QWidget):
 
         self.terminal.append("File saved.")
 
-    # function to handle run button press
+    # function to handle run button
     def run_file(self):
         # save current file first
         item = self.file_list.currentItem()
@@ -210,7 +207,7 @@ class ide(QWidget):
 
         self.terminal.append(f"Running {filename}...")
 
-        # run the project's main runner (main.py) using the same Python interpreter
+        # run main.py using interpreter
         main_path = os.path.join(os.path.dirname(__file__), "main.py")
         if not os.path.exists(main_path):
             self.terminal.append("Error: main.py not found in project_files.")
@@ -321,87 +318,6 @@ class ide(QWidget):
             self.input_line.clear()
         except Exception as e:
             self.terminal.append(f"Failed to send input: {e}")
-
-    # run all test
-    def run_all_tests(self):
-        # build queue of test cases 01..07 from test_cases folder
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        test_dir = os.path.join(project_root, "test_cases")
-        if not os.path.exists(test_dir):
-            QMessageBox.critical(self, "Error", f"test_cases folder not found at {test_dir}")
-            return
-
-        self.run_queue = []
-        for i in range(1, 8):
-            pattern = os.path.join(test_dir, f"{i:02d}_*.lol")
-            # glob manually
-            import glob
-            matches = glob.glob(pattern)
-            if matches:
-                # take first match
-                self.run_queue.append(matches[0])
-            else:
-                self.terminal.append(f"Test case for {i:02d} not found.")
-
-        if not self.run_queue:
-            QMessageBox.information(self, "Run All", "No test cases found to run.")
-            return
-
-        # disable run buttons while running
-        self.run_button.setEnabled(False)
-        self.run_all_button.setEnabled(False)
-
-        # start first
-        self._start_next_in_queue()
-
-    def _start_next_in_queue(self):
-        if not self.run_queue:
-            self.terminal.append("All queued tests finished.")
-            self.run_button.setEnabled(True)
-            self.run_all_button.setEnabled(True)
-            return
-
-        next_path = self.run_queue.pop(0)
-        filename = os.path.basename(next_path)
-        # load file into editor and save to ensure current contents run
-        with open(next_path, "r", encoding="utf-8") as f:
-            self.editor.setPlainText(f.read())
-
-        # save file back to disk (it already is) but ensure file_list contains it
-        if filename not in self.file_paths:
-            self.file_paths[filename] = next_path
-            self.file_list.addItem(filename)
-
-        # start process for this test case
-        # reuse run_file's process starting logic but without asking
-        # If a process is already running, wait for it to finish (shouldn't happen here)
-        if self.proc is not None and self.proc.state() == QProcess.ProcessState.Running:
-            self.terminal.append("Waiting for previous process to finish...")
-            return
-
-        # start process
-        main_path = os.path.join(os.path.dirname(__file__), "main.py")
-        self.terminal.append(f"----- Running {filename} -----")
-        self.proc = QProcess(self)
-        self.proc.setProgram(sys.executable)
-        self.proc.setArguments([main_path, next_path])
-        self.proc.setWorkingDirectory(os.path.dirname(main_path))
-        self.proc.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
-        self.proc.readyReadStandardOutput.connect(self._on_proc_output)
-        self.proc.readyReadStandardError.connect(self._on_proc_error)
-        # when finished, start next
-        def finished_and_continue(code, status):
-            self.terminal.append(f"Finished {filename} with code {code}")
-            self.proc = None
-            # small delay could be added; directly start next
-            self._start_next_in_queue()
-
-        self.proc.finished.connect(finished_and_continue)
-        self.proc.start()
-        if not self.proc.waitForStarted(3000):
-            self.terminal.append("Failed to start process for " + filename)
-            self.proc = None
-            self._start_next_in_queue()
 
 # main
 if __name__ == "__main__":
