@@ -190,7 +190,6 @@ class ide(QWidget):
         self.terminal.append("File saved.")
 
     # function to handle run button press
-    # checker for now
     def run_file(self):
         # save current file first
         item = self.file_list.currentItem()
@@ -217,7 +216,7 @@ class ide(QWidget):
             self.terminal.append("Error: main.py not found in project_files.")
             return
 
-        # If a process is already running, ask to terminate it first
+        # if a process is already running, ask to terminate it first
         if self.proc is not None and self.proc.state() == QProcess.ProcessState.Running:
             resp = QMessageBox.question(self, "Process Running", "A program is already running. Stop it and start a new run?",
                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
@@ -227,7 +226,7 @@ class ide(QWidget):
 
         # start the process using QProcess for live IO
         try:
-            # Ensure file saved already
+            # ensure file saved already
             code_text = self.editor.toPlainText()
 
             self.terminal.append(f"----- Running {filename} -----")
@@ -253,15 +252,14 @@ class ide(QWidget):
                 self.proc = None
                 return
 
-            # If code expects a simple single GIMMEH, prompt immediately
+            # if code expects a simple single GIMMEH, prompt immediately
             if "GIMMEH" in code_text.upper():
-                # Let user type into the input box and press Enter to send
                 self.terminal.append("Program requested input (GIMMEH). Type into the input box and press Enter to send.")
 
         except Exception as e:
             self.terminal.append(f"Error starting process: {e}")
 
-    # function to handle delete button press
+    # function for delete button
     def delete_file(self):
         item = self.file_list.currentItem()
         if not item:
@@ -292,7 +290,7 @@ class ide(QWidget):
         self.editor.clear()
         self.terminal.append(f"Removed '{filename}' from the IDE.")
 
-    # --- QProcess handlers and input forwarding ---
+    # QProcess output handlers and input forwarding
     def _on_proc_output(self):
         if not self.proc:
             return
@@ -324,7 +322,7 @@ class ide(QWidget):
         except Exception as e:
             self.terminal.append(f"Failed to send input: {e}")
 
-    # --- Run All tests sequentially ---
+    # run all test
     def run_all_tests(self):
         # build queue of test cases 01..07 from test_cases folder
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
