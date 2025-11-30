@@ -7,11 +7,11 @@ HAI
     BUHBYE
     
     HOW IZ I addNum YR x AN YR y
-        FOUND YR SUM OF x AN y
+        FOUND YR SUM OF x AN y BTW this originally had a small 'an' instead of AN, which i think is just wrong
     IF U SAY SO
 
     HOW IZ I printName YR person
-        VISIBLE "Hello, " person
+        VISIBLE "Hello, " + person
         GTFO
     IF U SAY SO
 
@@ -29,7 +29,7 @@ HAI
     I IZ printName YR name
     VISIBLE IT
 
-    I IZ printNum YR SUM OF x AN 2
+    I IZ printNum YR SUM OF x AN 2 BTW x was not declared globally, hence it shouldn't work. magkakaerror talaga
     VISIBLE IT
 
 KTHXBYE
