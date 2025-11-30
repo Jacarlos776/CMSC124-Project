@@ -327,7 +327,12 @@ class Interpreter:
             if isinstance(res, tuple) and res[0] == "RETURN":
                 self.IT = res[1]
                 return res[1]
-
+        
+        # in case there's no body but there is a return expression. 
+        if f.return_expr is not None:
+            val = self.eval(f.return_expr, call_env)
+            self.IT = val
+            return val
         # no FOUND
         self.IT = {"type": "NOOB", "value": None}
         return self.IT
