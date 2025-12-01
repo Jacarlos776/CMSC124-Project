@@ -1,36 +1,21 @@
 import sys
 import os
-import subprocess
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QListWidget, QVBoxLayout, QLabel,
-    QHBoxLayout, QTextEdit, QPushButton, QMessageBox, QFrame, QInputDialog,
-    QLineEdit
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QTextEdit, QPushButton, QComboBox, QTableWidget, QTableWidgetItem,
+    QHeaderView, QFileDialog
 )
 from PyQt6.QtGui import QFont, QColor, QTextCharFormat, QSyntaxHighlighter
-from PyQt6.QtCore import Qt, QProcess
+from PyQt6.QtCore import Qt, QProcess, QEvent
 
-# function that will highlight LOL Code syntax
+
 class highlight(QSyntaxHighlighter):
     def __init__(self, document):
         super().__init__(document)
-
-        keywords = [
-            "HAI", "KTHXBYE", "I HAS A", "VISIBLE", "GIMMEH",
-            "ITZ", "R", "SUM OF", "DIFF OF", "PRODUKT OF",
-            "QUOSHUNT OF", "MOD OF", "BIGGR OF", "SMALLR OF",
-            "O RLY?", "YA RLY", "NO WAI", "OIC", "BTW", "OBTW", "TLDR"
-            "BOTH OF", "EITHER OF", "WON OF", "ANY OF", "ALL OF", "BOTH SAEM", 
-            "DIFFRINT", "IS NOW A", "O RLY", "NO WAI", "YA RLY", "IM IN YR", 
-            "IM OUTTA YR", "HOW IZ I", "IF U SAY SO", "FOUND YR", "I IZ", "MAEK A",
-            "WAZZUP", "BUHBYE", "ITZ", "R", "VISIBLE", "GIMMEH", "SMOOSH", "MAEK", 
-            "NOT", "MEBBE", "OIC", "WTF", "OMG", "OMGWTF", "UPPIN", "NERFIN", "YR", 
-            "TIL", "WILE", "GTFO", "MKAY"
-        ]
-
+        keywords = ["HAI", "KTHXBYE", "I HAS A", "ITZ", "VISIBLE", "R"]
         self.keyword_format = QTextCharFormat()
         self.keyword_format.setForeground(QColor("#00eaff"))
         self.keyword_format.setFontWeight(QFont.Weight.Bold)
-
         self.rules = [(kw, self.keyword_format) for kw in keywords]
 
     def highlightBlock(self, text):
@@ -40,288 +25,249 @@ class highlight(QSyntaxHighlighter):
                 self.setFormat(index, len(pattern), fmt)
                 index = text.find(pattern, index + len(pattern))
 
-# left panel: widget that accepts file drops
-class left_panel(QWidget):
-    def __init__(self, parent_window):
-        super().__init__()
-        self.parent_window = parent_window
-        self.setAcceptDrops(True)
 
-        self.setStyleSheet("background-color: transparent;")
-
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.accept()
-        else:
-            event.ignore()
-
-    def dropEvent(self, event):
-        self.parent_window.process_dropped_files(event)
-
-# main window
 class ide(QWidget):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle("Ang Ganda ni Maam Kat LOLETPRETER")
+        self.resize(1400, 900)
 
-        self.setWindowTitle("LOL Code Interpreter")
-        self.resize(1200, 750)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
-        self.file_paths = {}
+        # TOP BAR - FILE COMBO AND TITLE ----------------
+        top_bar = QHBoxLayout()
+        top_bar.setContentsMargins(5, 5, 5, 5)
+        top_bar.setSpacing(5)
+        
+        # (1) FILE COMBO
+        self.file_combo = QComboBox()
+        self.file_combo.setEditable(True)
+        # Start with a placeholder entry when no file is loaded
+        self.file_combo.addItem("(None)")
+        self.file_combo.setCurrentIndex(0)
+        # Use an event filter to detect clicks on the combo's arrow and open file dialog
+        self.file_combo.installEventFilter(self)
+        top_bar.addWidget(self.file_combo, 1)
 
-        # main layout
-        main_layout = QHBoxLayout()
-        self.setLayout(main_layout)
+        # Connect Enter key to load file
+        self.file_combo.lineEdit().returnPressed.connect(self.load_file_from_input)
+        
+        # TITLE
+        title_label = QLabel("LOL CODE INTERPRETER")
+        title_label.setFont(QFont("Arial", 11, QFont.Weight.Bold))
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        top_bar.addWidget(title_label, 1)
+        
+        layout.addLayout(top_bar)
 
-        # left panel: file drop area + file list
-        self.drop_area = left_panel(self)
-        left_panel_layout = QVBoxLayout(self.drop_area)
+        # MIDDLE SECTION ----------------
+        middle = QHBoxLayout()
+        middle.setContentsMargins(0, 0, 0, 0)
+        middle.setSpacing(5)
+        layout.addLayout(middle, 1)
 
-        files_label = QLabel("FILES")
-        files_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        files_label.setStyleSheet("color: white;")
-        left_panel_layout.addWidget(files_label)
+        # LEFT COLUMN - EDITOR ----------------
+        left_column = QVBoxLayout()
+        left_column.setContentsMargins(0, 0, 0, 0)
+        left_column.setSpacing(5)
+        middle.addLayout(left_column, 1)
 
-        self.file_list = QListWidget()
-        self.file_list.setStyleSheet("background-color: #3a3a3a; color: white;")
-        self.file_list.clicked.connect(self.load_selected_file)
-
-        left_panel_layout.addWidget(self.file_list)
-
-        main_layout.addWidget(self.drop_area, 1)
-
-        # right panel: buttons + editor + terminal
-        right_panel = QVBoxLayout()
-        main_layout.addLayout(right_panel, 3)
-
-        # top buttons: save, run, delete
-        top_buttons = QHBoxLayout()
-        self.save_button = QPushButton("Save")
-        self.save_button.clicked.connect(self.save_file)
-        self.delete_button = QPushButton("Delete")
-        self.delete_button.clicked.connect(self.delete_file)
-        self.run_button = QPushButton("Run")
-        self.run_button.clicked.connect(self.run_file)
-
-        top_buttons.addWidget(self.save_button)
-        top_buttons.addWidget(self.delete_button)
-        top_buttons.addWidget(self.run_button)
-        top_buttons.addStretch()
-        right_panel.addLayout(top_buttons)
-
-        # editor
+        # (2) EDITOR ----------------
         self.editor = QTextEdit()
         self.editor.setFont(QFont("Consolas", 12))
         self.highlighter = highlight(self.editor.document())
-        right_panel.addWidget(self.editor)
+        left_column.addWidget(self.editor, 1)
 
-        # terminal
-        terminal_label = QLabel("Terminal")
-        terminal_label.setFont(QFont("Arial", 11, QFont.Weight.Bold))
-        right_panel.addWidget(terminal_label)
+        # RIGHT SECTION = LEXEMES AND SYMBOL TABLE (SIDE BY SIDE) ----------------
+        right_section = QHBoxLayout()
+        right_section.setContentsMargins(0, 0, 0, 0)
+        right_section.setSpacing(5)
+        middle.addLayout(right_section, 1)
 
-        self.terminal = QTextEdit()
-        self.terminal.setReadOnly(True)
-        self.terminal.setFixedHeight(180)
-        self.terminal.setStyleSheet("background-color: #3a3a3a; color: white;")
-        right_panel.addWidget(self.terminal)
-
-        # input line for programs that request stdin (GIMMEH)
-        input_layout = QHBoxLayout()
-        self.input_line = QLineEdit()
-        self.input_line.setPlaceholderText("Type input here and press Enter to send to running program")
-        self.input_line.returnPressed.connect(self.send_input_to_process)
-        input_layout.addWidget(self.input_line)
-        self.send_button = QPushButton("Send")
-        self.send_button.clicked.connect(self.send_input_to_process)
-        input_layout.addWidget(self.send_button)
-        right_panel.addLayout(input_layout)
-
-        # process state
-        self.proc = None
-        self.run_queue = []
-
-    # process dropped files
-    def process_dropped_files(self, event):
-        for url in event.mimeData().urls():
-            file_path = url.toLocalFile()
-
-            if file_path.endswith(".txt") or file_path.endswith(".lol"):
-                file_name = os.path.basename(file_path)
-                self.file_paths[file_name] = file_path
-
-                if not self.file_in_list(file_name):
-                    self.file_list.addItem(file_name)
-            else:
-                QMessageBox.warning(self, "Invalid File", "Only .txt or .lol allowed.")
-
-    def file_in_list(self, name):
-        for i in range(self.file_list.count()):
-            if self.file_list.item(i).text() == name:
-                return True
-        return False
-
-    # load selected file into editor
-    def load_selected_file(self):
-        item = self.file_list.currentItem()
-        if not item:
-            return
-
-        filename = item.text()
-        filepath = self.file_paths[filename]
-
-        with open(filepath, "r", encoding="utf-8") as f:
-            self.editor.setPlainText(f.read())
-
-    # function to save file
-    def save_file(self):
-        item = self.file_list.currentItem()
-        if not item:
-            return
-
-        filename = item.text()
-        filepath = self.file_paths[filename]
-
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(self.editor.toPlainText())
-
-        self.terminal.append("File saved.")
-
-    # function to handle run button
-    def run_file(self):
-        # save current file first
-        item = self.file_list.currentItem()
-        if not item:
-            QMessageBox.warning(self, "No File Selected", "Please select a file to run.")
-            return
-
-        filename = item.text()
-        filepath = self.file_paths[filename]
-
-        # write current editor contents to disk
-        try:
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(self.editor.toPlainText())
-        except Exception as e:
-            QMessageBox.critical(self, "Save Error", f"Could not save file: {e}")
-            return
-
-        self.terminal.append(f"Running {filename}...")
-
-        # run main.py using interpreter
-        main_path = os.path.join(os.path.dirname(__file__), "main.py")
-        if not os.path.exists(main_path):
-            self.terminal.append("Error: main.py not found in project_files.")
-            return
-
-        # if a process is already running, ask to terminate it first
-        if self.proc is not None and self.proc.state() == QProcess.ProcessState.Running:
-            resp = QMessageBox.question(self, "Process Running", "A program is already running. Stop it and start a new run?",
-                                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-            if resp != QMessageBox.StandardButton.Yes:
-                return
-            self.proc.kill()
-
-        # start the process using QProcess for live IO
-        try:
-            # ensure file saved already
-            code_text = self.editor.toPlainText()
-
-            self.terminal.append(f"----- Running {filename} -----")
-
-            main_path = os.path.join(os.path.dirname(__file__), "main.py")
-
-            # configure QProcess
-            self.proc = QProcess(self)
-            self.proc.setProgram(sys.executable)
-            self.proc.setArguments([main_path, filepath])
-            self.proc.setWorkingDirectory(os.path.dirname(main_path))
-            self.proc.setProcessEnvironment(self.proc.processEnvironment())
-            self.proc.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
-
-            self.proc.readyReadStandardOutput.connect(self._on_proc_output)
-            self.proc.readyReadStandardError.connect(self._on_proc_error)
-            self.proc.finished.connect(self._on_proc_finished)
-
-            # start
-            self.proc.start()
-            if not self.proc.waitForStarted(3000):
-                self.terminal.append("Failed to start process.")
-                self.proc = None
-                return
-
-            # if code expects a simple single GIMMEH, prompt immediately
-            if "GIMMEH" in code_text.upper():
-                self.terminal.append("Program requested input (GIMMEH). Type into the input box and press Enter to send.")
-
-        except Exception as e:
-            self.terminal.append(f"Error starting process: {e}")
-
-    # function for delete button
-    def delete_file(self):
-        item = self.file_list.currentItem()
-        if not item:
-            QMessageBox.warning(self, "No File Selected", "Please select a file to delete.")
-            return
-
-        filename = item.text()
-
-        confirm = QMessageBox.question(
-            self,
-            "Delete File",
-            f"Remove '{filename}' from the IDE?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-
-        if confirm != QMessageBox.StandardButton.Yes:
-            return
-
-        # remove from internal dict
-        if filename in self.file_paths:
-            del self.file_paths[filename]
-
-        # remove from list widget
-        row = self.file_list.row(item)
-        self.file_list.takeItem(row)
+        # LEXEMES TABLE ----------------
+        lex_container = QVBoxLayout()
+        lex_container.setContentsMargins(0, 0, 0, 0)
+        lex_container.setSpacing(0)
         
-        # if deleted file was being edited, clear editor
-        self.editor.clear()
-        self.terminal.append(f"Removed '{filename}' from the IDE.")
+        lex_label = QLabel("Lexemes")
+        lex_label.setFont(QFont("Arial", 11, QFont.Weight.Bold))
+        lex_label.setStyleSheet("padding: 5px; text-align: center;")
+        lex_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lex_container.addWidget(lex_label)
 
-    # QProcess output handlers and input forwarding
-    def _on_proc_output(self):
-        if not self.proc:
-            return
-        data = self.proc.readAllStandardOutput().data().decode()
-        if data:
-            self.terminal.append(data)
+        self.lex_table = QTableWidget(0, 2)
+        self.lex_table.setHorizontalHeaderLabels(["Lexeme", "Classification"])
+        self.lex_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.lex_table.setFont(QFont("Consolas", 9))
+        lex_container.addWidget(self.lex_table, 1)
+        
+        right_section.addLayout(lex_container, 1)
 
-    def _on_proc_error(self):
-        if not self.proc:
-            return
-        data = self.proc.readAllStandardError().data().decode()
-        if data:
-            self.terminal.append(data)
+        # SYMBOL TABLE ----------------
+        sym_container = QVBoxLayout()
+        sym_container.setContentsMargins(0, 0, 0, 0)
+        sym_container.setSpacing(0)
+        
+        sym_label = QLabel("SYMBOL TABLE")
+        sym_label.setFont(QFont("Arial", 11, QFont.Weight.Bold))
+        sym_label.setStyleSheet("padding: 5px; text-align: center;")
+        sym_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        sym_container.addWidget(sym_label)
 
-    def _on_proc_finished(self, exitCode, exitStatus):
-        self.terminal.append(f"Process finished with exit code {exitCode}")
+        self.symbol_table = QTableWidget(0, 2)
+        self.symbol_table.setHorizontalHeaderLabels(["Identifier", "Value"])
+        self.symbol_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.symbol_table.setFont(QFont("Consolas", 9))
+        sym_container.addWidget(self.symbol_table, 1)
+        
+        right_section.addLayout(sym_container, 1)
+
+        # (5) EXECUTE BUTTON ----------------
+        self.exec_btn = QPushButton("EXECUTE")
+        self.exec_btn.setFixedHeight(45)
+        self.exec_btn.setFont(QFont("Arial", 11, QFont.Weight.Bold))
+        layout.addWidget(self.exec_btn)
+
+        # (6) CONSOLE ----------------
+        self.console = QTextEdit()
+        self.console.setReadOnly(True)
+        self.console.setFont(QFont("Consolas", 11))
+        layout.addWidget(self.console, 1)
+
+        # Process runner
         self.proc = None
+        self.exec_btn.clicked.connect(self.run_program)
+        self.file_combo.currentIndexChanged.connect(self.load_file)
+        self.file_paths = {}
 
-    def send_input_to_process(self):
-        text = self.input_line.text()
-        if not self.proc or self.proc.state() != QProcess.ProcessState.Running:
-            self.terminal.append("No running program to send input to.")
+    # -------- FILE DROPS ----------
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls(): event.accept()
+        else: event.ignore()
+
+    def dropEvent(self, event):
+        for url in event.mimeData().urls():
+            path = url.toLocalFile()
+            name = os.path.basename(path)
+            if path.endswith(".txt") or path.endswith(".lol"):
+                # remove placeholder if present
+                idx_none = self.file_combo.findText("(None)")
+                if idx_none != -1:
+                    self.file_combo.removeItem(idx_none)
+                self.file_paths[name] = path
+                self.file_combo.addItem(name)
+                with open(path, "r") as f:
+                    self.editor.setText(f.read())
+
+    def load_file(self):
+        name = self.file_combo.currentText()
+        if name == "(None)":
             return
-        # write text + newline to stdin
-        try:
-            self.proc.write((text + "\n").encode())
-            self.proc.waitForBytesWritten(1000)
-            self.input_line.clear()
-        except Exception as e:
-            self.terminal.append(f"Failed to send input: {e}")
+        if name in self.file_paths:
+            with open(self.file_paths[name], "r") as f:
+                self.editor.setText(f.read())
 
-# main
+    def eventFilter(self, watched, event):
+        # Intercept mouse presses on the file combo to open file dialog when arrow clicked
+        if watched is self.file_combo and event.type() == QEvent.Type.MouseButtonPress:
+            # Determine if click is on the dropdown arrow area (right side)
+            click_x = event.position().x() if hasattr(event, 'position') else event.x()
+            if click_x >= self.file_combo.width() - 24:
+                self.open_file_dialog()
+                return True
+        return super().eventFilter(watched, event)
+    
+    def open_file_dialog(self):
+        file_dialog = QFileDialog()
+        paths, _ = file_dialog.getOpenFileNames(
+            self,
+            "Open LOL File",
+            "",
+            "LOL Files (*.lol);;Text Files (*.txt);;All Files (*.*)"
+        )
+        for path in paths:
+            name = os.path.basename(path)
+            # remove placeholder if present
+            idx_none = self.file_combo.findText("(None)")
+            if idx_none != -1:
+                self.file_combo.removeItem(idx_none)
+            if name not in self.file_paths:
+                self.file_paths[name] = path
+                self.file_combo.addItem(name)
+            self.file_combo.setCurrentText(name)
+    
+    def load_file_from_input(self):
+        # Load file when user types path and presses Enter
+        text = self.file_combo.currentText()
+        if os.path.exists(text):
+            name = os.path.basename(text)
+            # remove placeholder if present
+            idx_none = self.file_combo.findText("(None)")
+            if idx_none != -1:
+                self.file_combo.removeItem(idx_none)
+            self.file_paths[name] = text
+            if self.file_combo.findText(name) == -1:
+                self.file_combo.addItem(name)
+            self.file_combo.setCurrentText(name)
+
+    # -------- EXECUTE BUTTON ACTION ----------
+    def run_program(self):
+        if self.file_combo.currentText() not in self.file_paths:
+            self.console.append("No file selected!")
+            return
+
+        path = self.file_paths[self.file_combo.currentText()]
+        self.console.clear()
+        self.lex_table.setRowCount(0)
+        self.symbol_table.setRowCount(0)
+
+        self.proc = QProcess()
+        self.proc.readyReadStandardOutput.connect(self.read_output)
+        self.proc.start("python", ["main.py", path])
+
+        self.section = None
+
+    def read_output(self):
+        txt = self.proc.readAllStandardOutput().data().decode()
+
+        if "TOKENS_BEGIN" in txt:
+            self.section = "tokens"
+            return
+        if "TOKENS_END" in txt:
+            self.section = None
+            return
+        if "SYMBOL_BEGIN" in txt:
+            self.section = "symbols"
+            return
+        if "SYMBOL_END" in txt:
+            self.section = None
+            return
+
+        if self.section == "tokens":
+            parts = txt.strip().split("|")
+            if len(parts) == 2:
+                row = self.lex_table.rowCount()
+                self.lex_table.insertRow(row)
+                self.lex_table.setItem(row, 0, QTableWidgetItem(parts[1]))
+                self.lex_table.setItem(row, 1, QTableWidgetItem(parts[0]))
+            return
+
+        if self.section == "symbols":
+            parts = txt.strip().split("|")
+            if len(parts) == 2:
+                row = self.symbol_table.rowCount()
+                self.symbol_table.insertRow(row)
+                self.symbol_table.setItem(row, 0, QTableWidgetItem(parts[0]))
+                self.symbol_table.setItem(row, 1, QTableWidgetItem(parts[1]))
+            return
+
+        self.console.append(txt)
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = ide()
-    window.show()
+    win = ide()
+    win.show()
     sys.exit(app.exec())
