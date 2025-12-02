@@ -184,37 +184,49 @@ class Interpreter:
         # unary
         if op == "NOT":
             v = self.eval(node.operands[0], env)
-            return {"type": "TROOF", "value": not self.to_bool(v)}
+            res = {"type": "TROOF", "value": not self.to_bool(v)}
+            self.IT = res
+            return res
 
         # infinite arity
         if op == "SMOOSH":
             parts = []
             for o in node.operands:
                 parts.append(self.to_yarn(self.eval(o, env)))
-            return {"type": "YARN", "value": "".join(parts)}
+            res = {"type": "YARN", "value": "".join(parts)}
+            self.IT = res
+            return res
 
         # binary math
         if op in ("SUM_OF", "DIFF_OF", "PRODUKT_OF", "QUOSHUNT_OF", "MOD_OF",
         "BIGGR_OF", "SMALLR_OF"):
             a = self.eval(node.operands[0], env)
             b = self.eval(node.operands[1], env)
-            return self.math_eval(op, a, b)
+            res = self.math_eval(op, a, b)
+            self.IT = res
+            return res
 
         # boolean
         if op in ("BOTH_OF", "EITHER_OF", "WON_OF"):
             a = self.eval(node.operands[0], env)
             b = self.eval(node.operands[1], env)
-            return self.bool_eval(op, a, b)
+            res = self.bool_eval(op, a, b)
+            self.IT = res
+            return res
 
         # ALL OF / ANY OF
         if op in ("ALL_OF", "ANY_OF"):
-            return self.multi_bool_eval(op, [self.eval(x, env) for x in node.operands])
+            res = self.multi_bool_eval(op, [self.eval(x, env) for x in node.operands])
+            self.IT = res
+            return res
 
         # comparison
         if op in ("BOTH_SAEM", "DIFFRINT"):
             a = self.eval(node.operands[0], env)
             b = self.eval(node.operands[1], env)
-            return self.compare_eval(op, a, b)
+            res = self.compare_eval(op, a, b)
+            self.IT = res
+            return res
 
         raise LOLRuntimeError(f"Unknown operator {op}")
 
@@ -286,9 +298,21 @@ class Interpreter:
 
     # === || If / O RLY? || ===
     def eval_if(self, node, env):
+        # print(node)
+        # added MEBBE block to eval_if
+        # 1. Evaluate the YA RLY condition
         cond = self.IT if node.condition is None else self.eval(node.condition, env)
+        # YA RLY branch
         if self.to_bool(cond):
             return self.eval_block(node.ya_block, env)
+
+        # 2. Evaluate MEBBE blocks one by one
+        for mebbe_cond, mebbe_block in node.mebbe_blocks:
+            test_val = self.eval(mebbe_cond, env)
+            if self.to_bool(test_val):
+                return self.eval_block(mebbe_block, env)
+
+        # 3. NO WAI block
         if node.nowai_block:
             return self.eval_block(node.nowai_block, env)
 
