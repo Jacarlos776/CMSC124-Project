@@ -21,17 +21,37 @@ class highlight(QSyntaxHighlighter):
     def __init__(self, document):
         super().__init__(document)
         keywords = [
-            ["HAI", "KTHXBYE", "OBTW", "TLDR", "BTW"], #Program Structure -- Light Blue
-            ["I HAS A", "ITZ", "R", "IS NOW A", "MAEK", "MAEK A"], # Variable Declaration & Assignment -- Green
-            ["VISIBLE", "GIMMEH", "SMOOSH"], # Input/Output -- Yellow
-            ["SUM OF", "DIFF OF", "PRODUKT OF", "QUOSHUNT OF", "MOD OF", "BIGGR OF", "SMALLR OF"], # Arithmetic Operators -- Purple
-            ["BOTH OF", "EITHER OF", "WON OF", "ANY OF", "ALL OF", "BOTH SAEM", "DIFFRINT", "NOT"], # Boolean/Logic Operators -- Teal
-            ["O RLY?", "YA RLY", "NO WAI", "MEBBE", "OIC", "WTF", "OMG", "OMGWTF"], # Conditionals -- Orange
-            ["IM IN YR", "IM OUTTA YR", "UPPIN", "NERFIN", "YR", "TIL", "WILE"], # Loops -- Pink
-            ["HOW IZ I", "IF U SAY SO", "FOUND YR", "I IZ"], # Functions/Procedures -- Cyan
-            ["GTFO"], # Flow Control -- Red
-            ["WAZZUP", "BUHBYE", "MKAY", "FAIL", "WIN", "AN"], # Miscellaneous -- Grey
+            # Program Structure
+            ["HAI", "KTHXBYE", "OBTW", "TLDR", "BTW"],  # Light Blue
+            
+            # Variable Declaration & Assignment
+            ["I HAS A", "ITZ", "R", "IS NOW A", "MAEK", "MAEK A"],  # Green
+            
+            # Input/Output
+            ["VISIBLE", "GIMMEH", "SMOOSH"],  # Yellow
+            
+            # Arithmetic Operators
+            ["SUM OF", "DIFF OF", "PRODUKT OF", "QUOSHUNT OF", "MOD OF", "BIGGR OF", "SMALLR OF"],  # Purple
+            
+            # Boolean/Logic Operators
+            ["BOTH OF", "EITHER OF", "WON OF", "ANY OF", "ALL OF", "BOTH SAEM", "DIFFRINT", "NOT"],  # Teal
+            
+            # Conditionals
+            ["O RLY?", "O RLY", "YA RLY", "NO WAI", "MEBBE", "OIC", "WTF", "OMG", "OMGWTF"],  # Orange
+            
+            # Loops
+            ["IM IN YR", "IM OUTTA YR", "UPPIN", "NERFIN", "YR", "TIL", "WILE"],  # Pink
+            
+            # Functions/Procedures
+            ["HOW IZ I", "IF U SAY SO", "FOUND YR", "I IZ"],  # Cyan
+            
+            # Flow Control
+            ["GTFO"],  # Red
+            
+            # Miscellaneous / Others
+            ["WAZZUP", "BUHBYE", "MKAY", "FAIL", "WIN", "AN"],  # Grey
         ]
+
         
         colors = ["#00bfff", "#32cd32", "#ffff00", "#991072", "#0004ff", "#ffa500", "#ff69b4", "#ff1493", "#ff0000", "#0CE4BD"]
         
