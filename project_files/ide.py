@@ -21,28 +21,30 @@ class highlight(QSyntaxHighlighter):
     def __init__(self, document):
         super().__init__(document)
         keywords = [
-            "HAI", "KTHXBYE", "I HAS A", "VISIBLE", "GIMMEH",
-            "ITZ", "R", "SUM OF", "DIFF OF", "PRODUKT OF",
-            "QUOSHUNT OF", "MOD OF", "BIGGR OF", "SMALLR OF",
-            "O RLY?", "YA RLY", "NO WAI", "OIC", "BTW", "OBTW", "TLDR",
-            "BOTH OF", "EITHER OF", "WON OF", "ANY OF", "ALL OF", "BOTH SAEM", 
-            "DIFFRINT", "IS NOW A", "O RLY", "NO WAI", "YA RLY", "IM IN YR", 
-            "IM OUTTA YR", "HOW IZ I", "IF U SAY SO", "FOUND YR", "I IZ", "MAEK A",
-            "WAZZUP", "BUHBYE", "ITZ", "R", "VISIBLE", "GIMMEH", "SMOOSH", "MAEK", 
-            "NOT", "MEBBE", "OIC", "WTF", "OMG", "OMGWTF", "UPPIN", "NERFIN", "YR", 
-            "TIL", "WILE", "GTFO", "MKAY", "AN", "FAIL", "WIN"
+            ["HAI", "KTHXBYE", "OBTW", "TLDR", "BTW"], #Program Structure -- Light Blue
+            ["I HAS A", "ITZ", "R", "IS NOW A", "MAEK", "MAEK A"], # Variable Declaration & Assignment -- Green
+            ["VISIBLE", "GIMMEH", "SMOOSH"], # Input/Output -- Yellow
+            ["SUM OF", "DIFF OF", "PRODUKT OF", "QUOSHUNT OF", "MOD OF", "BIGGR OF", "SMALLR OF"], # Arithmetic Operators -- Purple
+            ["BOTH OF", "EITHER OF", "WON OF", "ANY OF", "ALL OF", "BOTH SAEM", "DIFFRINT", "NOT"], # Boolean/Logic Operators -- Teal
+            ["O RLY?", "YA RLY", "NO WAI", "MEBBE", "OIC", "WTF", "OMG", "OMGWTF"], # Conditionals -- Orange
+            ["IM IN YR", "IM OUTTA YR", "UPPIN", "NERFIN", "YR", "TIL", "WILE"], # Loops -- Pink
+            ["HOW IZ I", "IF U SAY SO", "FOUND YR", "I IZ"], # Functions/Procedures -- Cyan
+            ["GTFO"], # Flow Control -- Red
+            ["WAZZUP", "BUHBYE", "MKAY", "FAIL", "WIN", "AN"], # Miscellaneous -- Grey
         ]
-        self.keyword_format = QTextCharFormat()
-        self.keyword_format.setForeground(QColor("#00eaff"))
-        self.keyword_format.setFontWeight(QFont.Weight.Bold)
-        # Redid it to use regex instead to account for 'R' being highlighted in words like ERROR or TLDR
-        self.rules = [
-            (re.compile(r'\b' + re.escape(kw) + r'\b'), self.keyword_format)
-            for kw in keywords
-        ]
+        
+        colors = ["#00bfff", "#32cd32", "#ffff00", "#991072", "#0004ff", "#ffa500", "#ff69b4", "#ff1493", "#ff0000", "#0CE4BD"]
+        
+        self.rules = []
+        for keyword_list, color in zip(keywords, colors):
+            fmt = QTextCharFormat()
+            fmt.setForeground(QColor(color))
+            fmt.setFontWeight(QFont.Weight.Bold)
+            for kw in keyword_list:
+                regex = re.compile(r'\b' + re.escape(kw) + r'\b')
+                self.rules.append((regex, fmt))
 
     def highlightBlock(self, text):
-        # Redid it to use regex instead to account for 'R' being highlighted in words like ERROR or TLDR
         for regex, fmt in self.rules:
             for match in regex.finditer(text):
                 start = match.start()
@@ -54,6 +56,7 @@ class ide(QWidget):
         super().__init__()
         self.setWindowTitle("Ang Pogi ni Sir JC LOLETPRETER")
         self.resize(1400, 900)
+        
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
