@@ -13,18 +13,29 @@ class LOLRuntimeError(Exception):
 
 # === || Environment || ===
 class Environment:
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, symbol_callback=None):
         self.vars = {}          # {name: {"type": "...", "value": ...}}
         self.parent = parent
+        self.symbol_callback = symbol_callback
 
     def define(self, name, value):
         self.vars[name] = value
+        if self.symbol_callback:
+            try:
+                self.symbol_callback(name, value)
+            except Exception:
+                pass
 
     def set(self, name, value):
         env = self.lookup_env(name)
         if env is None:
             raise LOLRuntimeError(f"Variable '{name}' not declared.")
         env.vars[name] = value
+        if env.symbol_callback:
+            try:
+                env.symbol_callback(name, value)
+            except Exception:
+                pass
 
     def get(self, name):
         env = self.lookup_env(name)
@@ -43,13 +54,18 @@ class Environment:
 
 # === || Interpreter || ===
 class Interpreter:
-    def __init__(self, ast: Program):
+    def __init__(self, ast: Program, *, on_output=None, on_input=None, on_symbol_update=None):
         self.ast = ast
-        self.global_env = Environment()
+        # pass symbol update callback to environments so they can notify GUI
+        self.on_symbol_update = on_symbol_update
+        self.global_env = Environment(symbol_callback=self.on_symbol_update)
         self.functions = {}
         self.IT = {"type": "NOOB", "value": None}
+        # I/O callbacks
+        self.on_output = on_output
+        self.on_input = on_input
 
-    # Use this to run the interpreter in main
+    # run interpreter in main program
     def run(self):
         # load globals (var decls in WAZZUP)
         for d in self.ast.declarations:
@@ -59,7 +75,13 @@ class Interpreter:
         for fn in self.ast.functions:
             self.functions[fn.name] = fn
 
-        print("Registered functions:", list(self.functions.keys()))
+        if self.on_output:
+            try:
+                self.on_output("Registered functions: " + str(list(self.functions.keys())))
+            except Exception:
+                pass
+        else:
+            print("Registered functions:", list(self.functions.keys()))
 
         # run main (skip function defs)
         for stmt in self.ast.statements:
@@ -134,7 +156,10 @@ class Interpreter:
 
     # === || Input (Gimmeh) || ===
     def eval_gimmeh(self, node, env):
-        raw = input()     # GUI will replace with textbox
+        if self.on_input:
+            raw = self.on_input()
+        else:
+            raw = input()
         env.set(node.target, {"type": "YARN", "value": raw})
         self.IT = {"type": "YARN", "value": raw}
 
@@ -144,7 +169,13 @@ class Interpreter:
         for op in node.operands:
             val = self.eval(op, env)
             out += self.to_yarn(val)
-        print(out)
+        if self.on_output:
+            try:
+                self.on_output(out)
+            except Exception:
+                pass
+        else:
+            print(out)
         self.IT = {"type": "YARN", "value": out}
 
     # === || Expressions & Operators || ===

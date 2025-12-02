@@ -1,18 +1,36 @@
+from lexer import LexicalAnalyzer
+from parser import Parser
+from interpreter import Interpreter
+
 import sys
 import os
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QTextEdit, QPushButton, QComboBox, QTableWidget, QTableWidgetItem,
+    QTextEdit, QLineEdit, QPushButton, QComboBox, QTableWidget, QTableWidgetItem,
     QHeaderView, QFileDialog
 )
+
 from PyQt6.QtGui import QFont, QColor, QTextCharFormat, QSyntaxHighlighter
-from PyQt6.QtCore import Qt, QProcess, QEvent
+from PyQt6.QtCore import Qt, QProcess, QEvent, QObject, pyqtSignal
+import threading
+import queue
 
-
+# function for syntax highlighting
 class highlight(QSyntaxHighlighter):
     def __init__(self, document):
         super().__init__(document)
-        keywords = ["HAI", "KTHXBYE", "I HAS A", "ITZ", "VISIBLE", "R"]
+        keywords = [
+            "HAI", "KTHXBYE", "I HAS A", "VISIBLE", "GIMMEH",
+            "ITZ", "R", "SUM OF", "DIFF OF", "PRODUKT OF",
+            "QUOSHUNT OF", "MOD OF", "BIGGR OF", "SMALLR OF",
+            "O RLY?", "YA RLY", "NO WAI", "OIC", "BTW", "OBTW", "TLDR"
+            "BOTH OF", "EITHER OF", "WON OF", "ANY OF", "ALL OF", "BOTH SAEM", 
+            "DIFFRINT", "IS NOW A", "O RLY", "NO WAI", "YA RLY", "IM IN YR", 
+            "IM OUTTA YR", "HOW IZ I", "IF U SAY SO", "FOUND YR", "I IZ", "MAEK A",
+            "WAZZUP", "BUHBYE", "ITZ", "R", "VISIBLE", "GIMMEH", "SMOOSH", "MAEK", 
+            "NOT", "MEBBE", "OIC", "WTF", "OMG", "OMGWTF", "UPPIN", "NERFIN", "YR", 
+            "TIL", "WILE", "GTFO", "MKAY"
+        ]
         self.keyword_format = QTextCharFormat()
         self.keyword_format.setForeground(QColor("#00eaff"))
         self.keyword_format.setFontWeight(QFont.Weight.Bold)
@@ -25,33 +43,32 @@ class highlight(QSyntaxHighlighter):
                 self.setFormat(index, len(pattern), fmt)
                 index = text.find(pattern, index + len(pattern))
 
-
 class ide(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Ang Ganda ni Maam Kat LOLETPRETER")
+        self.setWindowTitle("Ang Pogi ni Sir JC LOLETPRETER")
         self.resize(1400, 900)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # TOP BAR - FILE COMBO AND TITLE ----------------
+        # TOP SECTION ----------------
         top_bar = QHBoxLayout()
         top_bar.setContentsMargins(5, 5, 5, 5)
         top_bar.setSpacing(5)
         
-        # (1) FILE COMBO
+        # (1) FILE EXPLORER
         self.file_combo = QComboBox()
         self.file_combo.setEditable(True)
-        # Start with a placeholder entry when no file is loaded
+        # placeholder when no file is loaded
         self.file_combo.addItem("(None)")
         self.file_combo.setCurrentIndex(0)
-        # Use an event filter to detect clicks on the combo's arrow and open file dialog
+        # detects if drop down arrow is clicked
         self.file_combo.installEventFilter(self)
         top_bar.addWidget(self.file_combo, 1)
 
-        # Connect Enter key to load file
+        # connect enter press in line edit to load file
         self.file_combo.lineEdit().returnPressed.connect(self.load_file_from_input)
         
         # TITLE
@@ -80,13 +97,13 @@ class ide(QWidget):
         self.highlighter = highlight(self.editor.document())
         left_column.addWidget(self.editor, 1)
 
-        # RIGHT SECTION = LEXEMES AND SYMBOL TABLE (SIDE BY SIDE) ----------------
+        # RIGHT SECTION = LEXEMES AND SYMBOL TABLE (SIDE BY SIDE)
         right_section = QHBoxLayout()
         right_section.setContentsMargins(0, 0, 0, 0)
         right_section.setSpacing(5)
         middle.addLayout(right_section, 1)
 
-        # LEXEMES TABLE ----------------
+        # (3) LIST OF TOKENS
         lex_container = QVBoxLayout()
         lex_container.setContentsMargins(0, 0, 0, 0)
         lex_container.setSpacing(0)
@@ -105,7 +122,7 @@ class ide(QWidget):
         
         right_section.addLayout(lex_container, 1)
 
-        # SYMBOL TABLE ----------------
+        # SYMBOL TABLE
         sym_container = QVBoxLayout()
         sym_container.setContentsMargins(0, 0, 0, 0)
         sym_container.setSpacing(0)
@@ -124,25 +141,75 @@ class ide(QWidget):
         
         right_section.addLayout(sym_container, 1)
 
-        # (5) EXECUTE BUTTON ----------------
+        # (5) EXECUTE BUTTON
         self.exec_btn = QPushButton("EXECUTE")
         self.exec_btn.setFixedHeight(45)
         self.exec_btn.setFont(QFont("Arial", 11, QFont.Weight.Bold))
         layout.addWidget(self.exec_btn)
 
-        # (6) CONSOLE ----------------
+        # (6) CONSOLE
+        console_widget = QWidget()
+        console_layout = QVBoxLayout()
+        console_layout.setContentsMargins(0, 0, 0, 0)
+        console_layout.setSpacing(0)
+        console_widget.setLayout(console_layout)
+
         self.console = QTextEdit()
         self.console.setReadOnly(True)
         self.console.setFont(QFont("Consolas", 11))
-        layout.addWidget(self.console, 1)
+        console_layout.addWidget(self.console, 1)
 
-        # Process runner
+        # input bar below console for gimmeh
+        input_bar = QWidget()
+        input_bar_layout = QHBoxLayout()
+        input_bar_layout.setContentsMargins(6, 4, 6, 4)
+        input_bar_layout.setSpacing(6)
+        input_bar.setLayout(input_bar_layout)
+
+        self.input_line = QLineEdit()
+        self.input_line.setFont(QFont("Consolas", 11))
+        self.input_line.setPlaceholderText("Type input for GIMMEH and press Enter or Send")
+        # visually blend with console: no frame
+        try:
+            self.input_line.setFrame(False)
+        except Exception:
+            pass
+
+        self.send_btn = QPushButton("Send")
+        self.send_btn.setFixedWidth(80)
+        input_bar_layout.addWidget(self.input_line, 1)
+        input_bar_layout.addWidget(self.send_btn)
+
+        console_layout.addWidget(input_bar)
+        layout.addWidget(console_widget, 1)
+
+        # thread/process management
         self.proc = None
         self.exec_btn.clicked.connect(self.run_program)
+        self.send_btn.clicked.connect(self.send_input)
+        # allow enter to send input
+        self.input_line.returnPressed.connect(self.send_input)
         self.file_combo.currentIndexChanged.connect(self.load_file)
         self.file_paths = {}
 
-    # -------- FILE DROPS ----------
+        # input queue for GIMMEH
+        self.input_queue = queue.Queue()
+
+        # signals for thread communication
+        class WorkerSignals(QObject):
+            output = pyqtSignal(str)
+            symbol = pyqtSignal(str, object)
+            enable_input = pyqtSignal(bool)
+
+        self.signals = WorkerSignals()
+        self.signals.output.connect(self.append_output)
+        self.signals.symbol.connect(self.update_symbol_table_from_signal)
+        self.signals.enable_input.connect(self.set_input_enabled)
+
+        # start with input disabled
+        self.set_input_enabled(False)
+
+    # FILE DROP HANDLING
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls(): event.accept()
         else: event.ignore()
@@ -170,9 +237,9 @@ class ide(QWidget):
                 self.editor.setText(f.read())
 
     def eventFilter(self, watched, event):
-        # Intercept mouse presses on the file combo to open file dialog when arrow clicked
+        # intercept mouse presses on the file combo to open file dialog when arrow clicked
         if watched is self.file_combo and event.type() == QEvent.Type.MouseButtonPress:
-            # Determine if click is on the dropdown arrow area (right side)
+            # determine if click is on the dropdown arrow area (right side)
             click_x = event.position().x() if hasattr(event, 'position') else event.x()
             if click_x >= self.file_combo.width() - 24:
                 self.open_file_dialog()
@@ -199,7 +266,7 @@ class ide(QWidget):
             self.file_combo.setCurrentText(name)
     
     def load_file_from_input(self):
-        # Load file when user types path and presses Enter
+        # load file when user types path and presses Enter
         text = self.file_combo.currentText()
         if os.path.exists(text):
             name = os.path.basename(text)
@@ -212,58 +279,109 @@ class ide(QWidget):
                 self.file_combo.addItem(name)
             self.file_combo.setCurrentText(name)
 
-    # -------- EXECUTE BUTTON ACTION ----------
+    # EXECUTION HANDLING
     def run_program(self):
-        if self.file_combo.currentText() not in self.file_paths:
-            self.console.append("No file selected!")
-            return
-
-        path = self.file_paths[self.file_combo.currentText()]
+        # run code from the editor (not the selected file)
+        code = self.editor.toPlainText()
         self.console.clear()
         self.lex_table.setRowCount(0)
         self.symbol_table.setRowCount(0)
 
-        self.proc = QProcess()
-        self.proc.readyReadStandardOutput.connect(self.read_output)
-        self.proc.start("python", ["main.py", path])
+        # tokenize
+        try:
+            analyzer = LexicalAnalyzer()
+            tokens, lexemes, rows, cols = analyzer.tokenize(code)
+        except Exception as e:
+            self.console.append(f"Lexical error: {e}")
+            return
 
-        self.section = None
+        # populate lexeme table (one-time)
+        for tok, lex in zip(tokens, lexemes):
+            row = self.lex_table.rowCount()
+            self.lex_table.insertRow(row)
+            self.lex_table.setItem(row, 0, QTableWidgetItem(lex))
+            self.lex_table.setItem(row, 1, QTableWidgetItem(tok))
 
+        # parse
+        try:
+            parser = Parser(tokens, lexemes, rows, cols)
+            ast = parser.parse_program()
+        except Exception as e:
+            self.console.append(f"Parsing error: {e}")
+            return
+
+        # create interpreter with callbacks
+        def on_output(s):
+            # ensure string
+            self.signals.output.emit(str(s))
+
+        def on_symbol(name, val):
+            # val is a dict like {"type": ..., "value": ...}
+            self.signals.symbol.emit(name, val)
+
+        def on_input():
+            # notify UI to enable input
+            self.signals.output.emit("<< Program awaiting input (GIMMEH). Type and press Send >>")
+            self.signals.enable_input.emit(True)
+            # block until input available
+            try:
+                val = self.input_queue.get()
+            finally:
+                # disable input after receiving
+                self.signals.enable_input.emit(False)
+            return val
+
+        interp = Interpreter(ast, on_output=on_output, on_input=on_input, on_symbol_update=on_symbol)
+
+        # run interpreter in separate thread
+        t = threading.Thread(target=self._run_interpreter_thread, args=(interp,), daemon=True)
+        t.start()
+
+    # function for reading output from interpreter thread
     def read_output(self):
-        txt = self.proc.readAllStandardOutput().data().decode()
+        pass
 
-        if "TOKENS_BEGIN" in txt:
-            self.section = "tokens"
-            return
-        if "TOKENS_END" in txt:
-            self.section = None
-            return
-        if "SYMBOL_BEGIN" in txt:
-            self.section = "symbols"
-            return
-        if "SYMBOL_END" in txt:
-            self.section = None
-            return
+    def _run_interpreter_thread(self, interp: Interpreter):
+        try:
+            interp.run()
+        except Exception as e:
+            self.signals.output.emit(f"Runtime error: {e}")
 
-        if self.section == "tokens":
-            parts = txt.strip().split("|")
-            if len(parts) == 2:
-                row = self.lex_table.rowCount()
-                self.lex_table.insertRow(row)
-                self.lex_table.setItem(row, 0, QTableWidgetItem(parts[1]))
-                self.lex_table.setItem(row, 1, QTableWidgetItem(parts[0]))
-            return
+    # slot for appending output from interpreter thread
+    def append_output(self, txt):
+        self.console.append(str(txt))
 
-        if self.section == "symbols":
-            parts = txt.strip().split("|")
-            if len(parts) == 2:
-                row = self.symbol_table.rowCount()
-                self.symbol_table.insertRow(row)
-                self.symbol_table.setItem(row, 0, QTableWidgetItem(parts[0]))
-                self.symbol_table.setItem(row, 1, QTableWidgetItem(parts[1]))
-            return
+    def set_input_enabled(self, enabled: bool):
+        self.input_line.setEnabled(enabled)
+        self.send_btn.setEnabled(enabled)
+        if enabled:
+            self.input_line.setFocus()
 
-        self.console.append(txt)
+    def send_input(self):
+        # called when user clicks Send
+        text = self.input_line.text()
+        # clear input field
+        self.input_line.clear()
+        # put into queue for interpreter
+        self.input_queue.put(text)
+        # echo to console
+        self.console.append(f"> {text}")
+
+    def update_symbol_table_from_signal(self, name, val):
+        # update or insert symbol table row for name
+        # val is dict {"type":..., "value":...}
+        value_str = '' if val is None else str(val.get('value', val))
+        # find existing row
+        for r in range(self.symbol_table.rowCount()):
+            item = self.symbol_table.item(r, 0)
+            if item and item.text() == name:
+                self.symbol_table.setItem(r, 1, QTableWidgetItem(value_str))
+                return
+        # not found -> insert
+        row = self.symbol_table.rowCount()
+        self.symbol_table.insertRow(row)
+        self.symbol_table.setItem(row, 0, QTableWidgetItem(name))
+        self.symbol_table.setItem(row, 1, QTableWidgetItem(value_str))
 
 
 if __name__ == "__main__":
