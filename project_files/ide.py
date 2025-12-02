@@ -2,6 +2,7 @@ from lexer import LexicalAnalyzer
 from parser import Parser
 from interpreter import Interpreter
 
+import re
 import sys
 import os
 from PyQt6.QtWidgets import (
@@ -23,25 +24,30 @@ class highlight(QSyntaxHighlighter):
             "HAI", "KTHXBYE", "I HAS A", "VISIBLE", "GIMMEH",
             "ITZ", "R", "SUM OF", "DIFF OF", "PRODUKT OF",
             "QUOSHUNT OF", "MOD OF", "BIGGR OF", "SMALLR OF",
-            "O RLY?", "YA RLY", "NO WAI", "OIC", "BTW", "OBTW", "TLDR"
+            "O RLY?", "YA RLY", "NO WAI", "OIC", "BTW", "OBTW", "TLDR",
             "BOTH OF", "EITHER OF", "WON OF", "ANY OF", "ALL OF", "BOTH SAEM", 
             "DIFFRINT", "IS NOW A", "O RLY", "NO WAI", "YA RLY", "IM IN YR", 
             "IM OUTTA YR", "HOW IZ I", "IF U SAY SO", "FOUND YR", "I IZ", "MAEK A",
             "WAZZUP", "BUHBYE", "ITZ", "R", "VISIBLE", "GIMMEH", "SMOOSH", "MAEK", 
             "NOT", "MEBBE", "OIC", "WTF", "OMG", "OMGWTF", "UPPIN", "NERFIN", "YR", 
-            "TIL", "WILE", "GTFO", "MKAY"
+            "TIL", "WILE", "GTFO", "MKAY", "AN", "FAIL", "WIN"
         ]
         self.keyword_format = QTextCharFormat()
         self.keyword_format.setForeground(QColor("#00eaff"))
         self.keyword_format.setFontWeight(QFont.Weight.Bold)
-        self.rules = [(kw, self.keyword_format) for kw in keywords]
+        # Redid it to use regex instead to account for 'R' being highlighted in words like ERROR or TLDR
+        self.rules = [
+            (re.compile(r'\b' + re.escape(kw) + r'\b'), self.keyword_format)
+            for kw in keywords
+        ]
 
     def highlightBlock(self, text):
-        for pattern, fmt in self.rules:
-            index = text.find(pattern)
-            while index != -1:
-                self.setFormat(index, len(pattern), fmt)
-                index = text.find(pattern, index + len(pattern))
+        # Redid it to use regex instead to account for 'R' being highlighted in words like ERROR or TLDR
+        for regex, fmt in self.rules:
+            for match in regex.finditer(text):
+                start = match.start()
+                length = match.end() - start
+                self.setFormat(start, length, fmt)
 
 class ide(QWidget):
     def __init__(self):
