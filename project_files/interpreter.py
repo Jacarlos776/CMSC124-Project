@@ -10,7 +10,6 @@ import sys
 class LOLRuntimeError(Exception):
     pass
 
-
 # === || Environment || ===
 class Environment:
     def __init__(self, parent=None, symbol_callback=None):

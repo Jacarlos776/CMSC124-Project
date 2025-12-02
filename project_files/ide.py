@@ -95,6 +95,36 @@ class ide(QWidget):
         self.editor = QTextEdit()
         self.editor.setFont(QFont("Consolas", 12))
         self.highlighter = highlight(self.editor.document())
+
+        # classification mapping for lexeme table
+        self.token_class = {
+            'HAI': 'Code Delimiter',
+            'KTHXBYE': 'Code Delimiter',
+            'I_HAS_A': 'Variable Declaration',
+            'ITZ': 'Variable Assignment',
+            'R': 'Assignment Keyword',
+            'VISIBLE': 'Output Keyword',
+            'GIMMEH': 'Input Keyword',
+            'YARN_LIT': 'String Literal (delimited by ")',
+            'NUMBR_LIT': 'Literal',
+            'NUMBAR_LIT': 'Literal',
+            'TROOF_LIT': 'Literal',
+            'ID': 'Variable Identifier',
+            'SMOOSH': 'String Concatenation',
+            'SUM_OF': 'Operator',
+            'DIFF_OF': 'Operator',
+            'PRODUKT_OF': 'Operator',
+            'QUOSHUNT_OF': 'Operator',
+            'MOD_OF': 'Operator',
+            'WAZZUP': 'Declaration Block',
+            'BUHBYE': 'End Declaration Block',
+            'O_RLY': 'Conditional Start',
+            'YA_RLY': 'Conditional Branch',
+            'NO_WAI': 'Conditional Branch',
+            'OIC': 'Conditional End',
+            'IM_IN_YR': 'Loop Start',
+            'IM_OUTTA_YR': 'Loop End',
+        }
         left_column.addWidget(self.editor, 1)
 
         # RIGHT SECTION = LEXEMES AND SYMBOL TABLE (SIDE BY SIDE)
@@ -295,12 +325,16 @@ class ide(QWidget):
             self.console.append(f"Lexical error: {e}")
             return
 
-        # populate lexeme table (one-time)
+        # Populate lexeme table (one-time) using human-friendly classifications
         for tok, lex in zip(tokens, lexemes):
             row = self.lex_table.rowCount()
             self.lex_table.insertRow(row)
             self.lex_table.setItem(row, 0, QTableWidgetItem(lex))
-            self.lex_table.setItem(row, 1, QTableWidgetItem(tok))
+            cls = self.token_class.get(tok)
+            if cls is None:
+                # Fallback: prettify token name
+                cls = tok.replace('_', ' ').title()
+            self.lex_table.setItem(row, 1, QTableWidgetItem(cls))
 
         # parse
         try:
