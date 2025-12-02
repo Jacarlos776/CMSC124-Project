@@ -124,6 +124,18 @@ class ide(QWidget):
             'OIC': 'Conditional End',
             'IM_IN_YR': 'Loop Start',
             'IM_OUTTA_YR': 'Loop End',
+            'BOTH_OF': 'Operator',
+            'EITHER_OF': 'Operator',
+            'WON_OF': 'Operator',
+            'ALL_OF': 'Operator',
+            'ANY_OF': 'Operator',
+            'AN': 'Connector',
+            'MKAY': 'Terminator',
+            'NOT': 'Operator',
+            'BOTH_SAEM': 'Operator',
+            'DIFFRINT': 'Operator',
+            'BIGGR_OF': 'Operator',
+            'SMALLR_OF': 'Operator',
         }
         left_column.addWidget(self.editor, 1)
 
@@ -309,8 +321,15 @@ class ide(QWidget):
                 self.file_combo.addItem(name)
             self.file_combo.setCurrentText(name)
 
-    # EXECUTION HANDLING
+    # EXECUTION HANDLING    
     def run_program(self):
+        # === || Added to completely reset inputs || ===
+        self.current_interpreter = None
+        # Reset input buffer
+        self.input_queue = queue.Queue()
+        # Disable input bar
+        self.set_input_enabled(False)
+
         # run code from the editor (not the selected file)
         code = self.editor.toPlainText()
         self.console.clear()
