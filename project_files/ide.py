@@ -37,7 +37,7 @@ class highlight(QSyntaxHighlighter):
             ["BOTH OF", "EITHER OF", "WON OF", "ANY OF", "ALL OF", "BOTH SAEM", "DIFFRINT", "NOT"],  # Teal
             
             # Conditionals
-            ["O RLY?", "O RLY", "YA RLY", "NO WAI", "MEBBE", "OIC", "WTF", "OMG", "OMGWTF"],  # Orange
+            ["O RLY?", "O RLY", "YA RLY", "NO WAI", "MEBBE", "OIC", "WTF?", "OMG", "OMGWTF"],  # Orange
             
             # Loops
             ["IM IN YR", "IM OUTTA YR", "UPPIN", "NERFIN", "YR", "TIL", "WILE"],  # Pink
@@ -165,7 +165,40 @@ class ide(QWidget):
             'DIFFRINT': 'Operator',
             'BIGGR_OF': 'Operator',
             'SMALLR_OF': 'Operator',
+
+            # Added Tokens
+            'OBTW': 'Comment Block Start',
+            'TLDR': 'Comment Block End',
+            'BTW': 'Comment',
+
+            'IS_NOW_A': 'Type Casting',
+            'MAEK': 'Type Casting / Construct',
+            'MAEK_A': 'Type Casting / Construct',
+
+            'O_RLY?': 'Conditional Start',
+            'MEBBE': 'Conditional Branch',
+
+            'WTF': 'Switch Start',
+            'OMG': 'Switch Case',
+            'OMGWTF': 'Default Case',
+
+            'UPPIN': 'Increment Keyword',
+            'NERFIN': 'Decrement Keyword',
+            'YR': 'Loop Variable',
+            'TIL': 'Loop Condition (until)',
+            'WILE': 'Loop Condition (while)',
+
+            'HOW_IZ_I': 'Function Declaration',
+            'IF_U_SAY_SO': 'Function End',
+            'FOUND_YR': 'Function Return',
+            'I_IZ': 'Function Call',
+
+            'GTFO': 'Flow Control (Break/Return)',
+
+            'FAIL': 'Literal',
+            'WIN': 'Literal'
         }
+
         left_column.addWidget(self.editor, 1)
 
         # RIGHT SECTION = LEXEMES AND SYMBOL TABLE (SIDE BY SIDE)
