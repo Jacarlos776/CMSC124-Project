@@ -16,7 +16,7 @@ from PyQt6.QtCore import Qt, QProcess, QEvent, QObject, pyqtSignal
 import threading
 import queue
 
-# function for syntax highlighting
+# Function for syntax highlighting
 class highlight(QSyntaxHighlighter):
     def __init__(self, document):
         super().__init__(document)
@@ -76,7 +76,6 @@ class ide(QWidget):
         super().__init__()
         self.setWindowTitle("Ang Pogi ni Sir JC LOLETPRETER")
         self.resize(1400, 900)
-        
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -100,7 +99,7 @@ class ide(QWidget):
         # connect enter press in line edit to load file
         self.file_combo.lineEdit().returnPressed.connect(self.load_file_from_input)
         
-        # TITLE
+        # title label
         title_label = QLabel("LOL CODE INTERPRETER")
         title_label.setFont(QFont("Arial", 11, QFont.Weight.Bold))
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -114,13 +113,13 @@ class ide(QWidget):
         middle.setSpacing(5)
         layout.addLayout(middle, 1)
 
-        # LEFT COLUMN - EDITOR ----------------
+        # LEFT COLUMN - EDITOR
         left_column = QVBoxLayout()
         left_column.setContentsMargins(0, 0, 0, 0)
         left_column.setSpacing(5)
         middle.addLayout(left_column, 1)
 
-        # (2) EDITOR ----------------
+        # (2) EDITOR
         self.editor = QTextEdit()
         self.editor.setFont(QFont("Consolas", 12))
         self.highlighter = highlight(self.editor.document())
@@ -201,7 +200,7 @@ class ide(QWidget):
 
         left_column.addWidget(self.editor, 1)
 
-        # RIGHT SECTION = LEXEMES AND SYMBOL TABLE (SIDE BY SIDE)
+        # RIGHT COLUMN = LIST OF TOKENS AND SYMBOL TABLE
         right_section = QHBoxLayout()
         right_section.setContentsMargins(0, 0, 0, 0)
         right_section.setSpacing(5)
@@ -226,7 +225,7 @@ class ide(QWidget):
         
         right_section.addLayout(lex_container, 1)
 
-        # SYMBOL TABLE
+        # (4) SYMBOL TABLE
         sym_container = QVBoxLayout()
         sym_container.setContentsMargins(0, 0, 0, 0)
         sym_container.setSpacing(0)
@@ -245,6 +244,7 @@ class ide(QWidget):
         
         right_section.addLayout(sym_container, 1)
 
+        # BOTTOM SECTION ----------------
         # (5) EXECUTE BUTTON
         self.exec_btn = QPushButton("EXECUTE")
         self.exec_btn.setFixedHeight(45)
@@ -263,7 +263,7 @@ class ide(QWidget):
         self.console.setFont(QFont("Consolas", 11))
         console_layout.addWidget(self.console, 1)
 
-        # input bar below console for gimmeh
+        # input bar for user input during GIMMEH
         input_bar = QWidget()
         input_bar_layout = QHBoxLayout()
         input_bar_layout.setContentsMargins(6, 4, 6, 4)
@@ -272,8 +272,7 @@ class ide(QWidget):
 
         self.input_line = QLineEdit()
         self.input_line.setFont(QFont("Consolas", 11))
-        self.input_line.setPlaceholderText("Type input for GIMMEH and press Enter or Send")
-        # visually blend with console: no frame
+        self.input_line.setPlaceholderText("Type input for GIMMEH and press enter or send")
         try:
             self.input_line.setFrame(False)
         except Exception:
@@ -287,19 +286,23 @@ class ide(QWidget):
         console_layout.addWidget(input_bar)
         layout.addWidget(console_widget, 1)
 
-        # thread/process management
+        # connect buttons and events to their corresponding handlers
+        # (execute → run_program, send → send_input, file selection → load_file)
         self.proc = None
         self.exec_btn.clicked.connect(self.run_program)
         self.send_btn.clicked.connect(self.send_input)
-        # allow enter to send input
         self.input_line.returnPressed.connect(self.send_input)
         self.file_combo.currentIndexChanged.connect(self.load_file)
         self.file_paths = {}
 
-        # input queue for GIMMEH
+        # queue for input lines from user to interpreter
         self.input_queue = queue.Queue()
 
-        # signals for thread communication
+        # define and initialize custom Qt signals to update UI from
+        # the interpreter thread:
+        # output(str) → append printed text to console
+        # symbol(name, value) → update the symbol table display
+        # enable_input(bool) → enable or disable the input field when needed
         class WorkerSignals(QObject):
             output = pyqtSignal(str)
             symbol = pyqtSignal(str, object)
@@ -310,7 +313,7 @@ class ide(QWidget):
         self.signals.symbol.connect(self.update_symbol_table_from_signal)
         self.signals.enable_input.connect(self.set_input_enabled)
 
-        # start with input disabled
+        # input bar is disabled by default
         self.set_input_enabled(False)
 
     # FILE DROP HANDLING
@@ -436,7 +439,7 @@ class ide(QWidget):
 
         def on_input():
             # notify UI to enable input
-            self.signals.output.emit("<< Program awaiting input (GIMMEH). Type and press Send >>")
+            self.signals.output.emit(">> Waiting for input...")
             self.signals.enable_input.emit(True)
             # block until input available
             try:
@@ -497,7 +500,6 @@ class ide(QWidget):
         self.symbol_table.insertRow(row)
         self.symbol_table.setItem(row, 0, QTableWidgetItem(name))
         self.symbol_table.setItem(row, 1, QTableWidgetItem(value_str))
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
