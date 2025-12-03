@@ -460,6 +460,94 @@ class Interpreter:
 
         return str(v)
 
-    def typecast(self, val, t):
-        # TODO: implement explicit MAEK semantics
-        return {"type": t, "value": val["value"]}
+    def typecast(self, val, target_type):
+        src_t = val["type"]
+        src_v = val["value"]
+
+        # === NOOB ===
+        if src_t == "NOOB":
+            # Implicit casting only allowed to TROOF
+            if target_type == "TROOF":
+                return {"type": "TROOF", "value": False}
+
+            # Explicit typecasting allowed → use empty/zero values
+            if target_type == "NUMBR":
+                return {"type": "NUMBR", "value": 0}
+            if target_type == "NUMBAR":
+                return {"type": "NUMBAR", "value": 0.0}
+            if target_type == "YARN":
+                return {"type": "YARN", "value": ""}
+
+            raise LOLRuntimeError(f"Cannot cast NOOB to {target_type}")
+
+        # === TROOF ===
+        if src_t == "TROOF":
+            if target_type == "TROOF":
+                return {"type": "TROOF", "value": src_v}
+
+            if target_type == "NUMBR":
+                return {"type": "NUMBR", "value": 1 if src_v else 0}
+
+            if target_type == "NUMBAR":
+                return {"type": "NUMBAR", "value": 1.0 if src_v else 0.0}
+
+            if target_type == "YARN":
+                return {"type": "YARN", "value": ("WIN" if src_v else "FAIL")}
+
+            raise LOLRuntimeError(f"Cannot cast TROOF to {target_type}")
+
+        # === NUMBR ===
+        if src_t == "NUMBR":
+            if target_type == "NUMBR":
+                return {"type": "NUMBR", "value": int(src_v)}
+
+            if target_type == "NUMBAR":
+                return {"type": "NUMBAR", "value": float(src_v)}
+
+            if target_type == "YARN":
+                return {"type": "YARN", "value": str(src_v)}
+
+            if target_type == "TROOF":
+                return {"type": "TROOF", "value": (src_v != 0)}
+
+            raise LOLRuntimeError(f"Cannot cast NUMBR to {target_type}")
+
+        # === NUMBAR ===
+        if src_t == "NUMBAR":
+            if target_type == "NUMBAR":
+                return {"type": "NUMBAR", "value": float(src_v)}
+
+            if target_type == "NUMBR":
+                return {"type": "NUMBR", "value": int(src_v)}  # truncate
+
+            if target_type == "YARN":
+                return {"type": "YARN", "value": f"{src_v:.2f}".rstrip('0').rstrip('.')}
+
+            if target_type == "TROOF":
+                return {"type": "TROOF", "value": (src_v != 0.0)}
+
+            raise LOLRuntimeError(f"Cannot cast NUMBAR to {target_type}")
+
+        # === YARN ===
+        if src_t == "YARN":
+            if target_type == "YARN":
+                return {"type": "YARN", "value": src_v}
+
+            if target_type in ("NUMBR", "NUMBAR"):
+                s = src_v.strip()
+                # validate numeric string
+                try:
+                    if '.' in s:
+                        return {"type": "NUMBAR", "value": float(s)}
+                    else:
+                        return {"type": "NUMBR", "value": int(s)}
+                except ValueError:
+                    raise LOLRuntimeError(f"Cannot cast YARN '{src_v}' to {target_type}")
+
+            if target_type == "TROOF":
+                # Empty string → FAIL; else → WIN
+                return {"type": "TROOF", "value": (src_v != "")}
+
+            raise LOLRuntimeError(f"Cannot cast YARN to {target_type}")
+
+        raise LOLRuntimeError(f"Unknown source type {src_t}")
