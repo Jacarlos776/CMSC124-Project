@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
     QHeaderView, QFileDialog
 )
 
-from PyQt6.QtGui import QFont, QColor, QTextCharFormat, QSyntaxHighlighter
+from PyQt6.QtGui import QFont, QColor, QTextCharFormat, QSyntaxHighlighter, QIcon
 from PyQt6.QtCore import Qt, QProcess, QEvent, QObject, pyqtSignal
 import threading
 import queue
@@ -74,6 +74,7 @@ class highlight(QSyntaxHighlighter):
 class ide(QWidget):
     def __init__(self):
         super().__init__()
+        self.setWindowIcon(QIcon(":icons/lolenterpreter_icon.png"))
         self.setWindowTitle("Ang Pogi ni Sir JC LOLETPRETER")
         self.resize(1400, 900)
 
