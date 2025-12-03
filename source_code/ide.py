@@ -409,14 +409,13 @@ class ide(QWidget):
             self.console.append(f"Lexical error: {e}")
             return
 
-        # Populate lexeme table (one-time) using human-friendly classifications
+        # fill lexeme table using classifications
         for tok, lex in zip(tokens, lexemes):
             row = self.lex_table.rowCount()
             self.lex_table.insertRow(row)
             self.lex_table.setItem(row, 0, QTableWidgetItem(lex))
             cls = self.token_class.get(tok)
             if cls is None:
-                # Fallback: prettify token name
                 cls = tok.replace('_', ' ').title()
             self.lex_table.setItem(row, 1, QTableWidgetItem(cls))
 
