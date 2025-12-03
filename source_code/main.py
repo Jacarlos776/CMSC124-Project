@@ -4,6 +4,19 @@ from parser import Parser           # Recursive Descent Parser
 from interpreter import Interpreter  # Interpreter to execute AST
 import sys                          # System module for command-line args
 
+# main.py
+import sys
+from PyQt6.QtWidgets import QApplication
+import ide  # replace 'ide_file' with the filename where IDE class is defined
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = ide.ide()
+    window.show()
+    sys.exit(app.exec())
+
+
+
 # -- MAIN --
 
 # Check if the user provided a file path as command-line argument
