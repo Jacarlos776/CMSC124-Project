@@ -1,3 +1,4 @@
+# Import modules
 from lexer import LexicalAnalyzer
 from parser import Parser
 from interpreter import Interpreter
@@ -5,6 +6,8 @@ from interpreter import Interpreter
 import re
 import sys
 import os
+
+# PyQt6 imports
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QTextEdit, QLineEdit, QPushButton, QComboBox, QTableWidget, QTableWidgetItem,
@@ -165,7 +168,6 @@ class ide(QWidget):
             'BIGGR_OF': 'Operator',
             'SMALLR_OF': 'Operator',
 
-            # Added Tokens
             'OBTW': 'Comment Block Start',
             'TLDR': 'Comment Block End',
             'BTW': 'Comment',
@@ -317,10 +319,12 @@ class ide(QWidget):
         self.set_input_enabled(False)
 
     # FILE DROP HANDLING
+    # allow drag and drop of files into the file combo box
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls(): event.accept()
         else: event.ignore()
 
+    # drop event handler
     def dropEvent(self, event):
         for url in event.mimeData().urls():
             path = url.toLocalFile()
@@ -334,7 +338,8 @@ class ide(QWidget):
                 self.file_combo.addItem(name)
                 with open(path, "r") as f:
                     self.editor.setText(f.read())
-
+    
+    # load file when selected from combo box
     def load_file(self):
         name = self.file_combo.currentText()
         if name == "(None)":
@@ -343,6 +348,7 @@ class ide(QWidget):
             with open(self.file_paths[name], "r") as f:
                 self.editor.setText(f.read())
 
+    # event filter to detect clicks on combo box arrow
     def eventFilter(self, watched, event):
         # intercept mouse presses on the file combo to open file dialog when arrow clicked
         if watched is self.file_combo and event.type() == QEvent.Type.MouseButtonPress:
@@ -353,6 +359,7 @@ class ide(QWidget):
                 return True
         return super().eventFilter(watched, event)
     
+    # open file dialog to select files
     def open_file_dialog(self):
         file_dialog = QFileDialog()
         paths, _ = file_dialog.getOpenFileNames(
@@ -372,12 +379,11 @@ class ide(QWidget):
                 self.file_combo.addItem(name)
             self.file_combo.setCurrentText(name)
     
+    # load file when user selects a file path from combo box input
     def load_file_from_input(self):
-        # load file when user types path and presses Enter
         text = self.file_combo.currentText()
         if os.path.exists(text):
             name = os.path.basename(text)
-            # remove placeholder if present
             idx_none = self.file_combo.findText("(None)")
             if idx_none != -1:
                 self.file_combo.removeItem(idx_none)
@@ -457,7 +463,8 @@ class ide(QWidget):
     # function for reading output from interpreter thread
     def read_output(self):
         pass
-
+    
+    # function to run interpreter in separate thread
     def _run_interpreter_thread(self, interp: Interpreter):
         try:
             interp.run()
@@ -468,14 +475,15 @@ class ide(QWidget):
     def append_output(self, txt):
         self.console.append(str(txt))
 
+    # slot for enabling/disabling input field
     def set_input_enabled(self, enabled: bool):
         self.input_line.setEnabled(enabled)
         self.send_btn.setEnabled(enabled)
         if enabled:
             self.input_line.setFocus()
 
+    # called when user enter inputs
     def send_input(self):
-        # called when user clicks Send
         text = self.input_line.text()
         # clear input field
         self.input_line.clear()
@@ -484,8 +492,8 @@ class ide(QWidget):
         # echo to console
         self.console.append(f"> {text}")
 
+    # update or insert symbol table row for name
     def update_symbol_table_from_signal(self, name, val):
-        # update or insert symbol table row for name
         # val is dict {"type":..., "value":...}
         value_str = '' if val is None else str(val.get('value', val))
         # find existing row
